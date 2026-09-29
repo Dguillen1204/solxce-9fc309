@@ -1,10 +1,11 @@
 // Views/RunLogView.swift
 import SwiftUI
 import SwiftData
-import Combine
+import MapKit
+import CoreLocation
 
 enum RunTrackingMode: String, CaseIterable, Identifiable {
-    case live = "Live Run Tracker"
+    case live = "Live GPS Tracker"
     case manual = "Manual Entry"
 
     var id: String { rawValue }
@@ -15,61 +16,26 @@ struct RunLogView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \RunEntry.date, order: .reverse) private var pastRuns: [RunEntry]
 
+    @StateObject private var tracker = LocationRunTracker()
+    
     @State private var mode: RunTrackingMode = .live
     @State private var runTitle: String = "Outdoor Run"
     @State private var notes: String = ""
-
-    // Live Tracking State
-    @State private var isRunning: Bool = false
-    @State private var isPaused: Bool = false
-    @State private var elapsedSeconds: Int = 0
-    @State private var liveDistanceMiles: Double = 0.0
-    @State private var liveSpeedMph: Double = 6.0 // Target or simulated speed (mph)
-    @State private var timerSubscription: AnyCancellable? = nil
     @State private var showFinishConfirmation: Bool = false
-
+    @State private var selectedHistoricalRun: RunEntry? = nil
+    
+    // Map View Camera
+    @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
+    @State private var mapInteractionUserMode: Bool = false
+    
     // Manual Entry State
     @State private var manualDistanceMiles: Double = 3.1
     @State private var manualDurationMinutes: Int = 24
     @State private var manualDurationSeconds: Int = 30
     @State private var manualCaloriesBurned: Int = 340
-
-    // MARK: - Computed Properties for Live Tracker
-    var livePaceMinutesPerMile: Double {
-        guard liveDistanceMiles > 0 else { return 0 }
-        return (Double(elapsedSeconds) / 60.0) / liveDistanceMiles
-    }
-
-    var liveFormattedPace: String {
-        guard liveDistanceMiles > 0.01 else { return "--'--\" /mi" }
-        let pace = livePaceMinutesPerMile
-        let mins = Int(pace)
-        let secs = Int((pace - Double(mins)) * 60)
-        return String(format: "%d'%02d\" /mi", mins, max(0, min(59, secs)))
-    }
-
-    var liveCurrentSpeedPace: String {
-        guard liveSpeedMph > 0.1 else { return "--'--\" /mi" }
-        let paceMins = 60.0 / liveSpeedMph
-        let mins = Int(paceMins)
-        let secs = Int((paceMins - Double(mins)) * 60)
-        return String(format: "%d'%02d\" /mi", mins, max(0, min(59, secs)))
-    }
-
-    var liveFormattedTime: String {
-        let hrs = elapsedSeconds / 3600
-        let mins = (elapsedSeconds % 3600) / 60
-        let secs = elapsedSeconds % 60
-        if hrs > 0 {
-            return String(format: "%02d:%02d:%02d", hrs, mins, secs)
-        } else {
-            return String(format: "%02d:%02d", mins, secs)
-        }
-    }
-
-    var liveCaloriesBurned: Int {
-        Int(liveDistanceMiles * 110)
-    }
+    
+    // Speed Simulation Dial for test / indoor training
+    @State private var simulationSpeedMph: Double = 7.0
 
     // MARK: - Manual Computed Properties
     var manualTotalDurationSeconds: Int {
@@ -91,9 +57,9 @@ struct RunLogView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: AppTheme.Spacing.lg) {
-                    // Mode Picker
-                    Picker("Mode", selection: $mode) {
+                VStack(spacing: AppTheme.Spacing.md) {
+                    // Segmented Mode Selector
+                    Picker("Tracking Mode", selection: $mode) {
                         ForEach(RunTrackingMode.allCases) { item in
                             Text(item.rawValue).tag(item)
                         }
@@ -102,26 +68,26 @@ struct RunLogView: View {
                     .padding(.top, AppTheme.Spacing.xs)
 
                     if mode == .live {
-                        liveTrackerCard
+                        liveGpsTrackerView
                     } else {
                         manualEntryCard
                     }
 
-                    // Run Notes & Tagging
+                    // Workout Details / Title & Notes
                     VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
-                        Text("RUN TITLE & NOTES")
+                        Text("RUN DETAILS")
                             .font(AppTheme.eyebrowFont)
                             .tracking(1.5)
                             .foregroundStyle(AppTheme.textSecondary)
 
-                        TextField("Workout Title (e.g. Morning 5K, Tempo Interval)", text: $runTitle)
+                        TextField("Run Name (e.g., Morning 5K, Strava Segment)", text: $runTitle)
                             .font(AppTheme.bodyFont)
                             .padding(AppTheme.Spacing.sm)
                             .background(AppTheme.field)
                             .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
                             .foregroundStyle(AppTheme.text)
 
-                        TextField("Notes (shoes, weather, elevation, feeling)", text: $notes)
+                        TextField("Notes (shoes, route conditions, elevation)", text: $notes)
                             .font(AppTheme.bodyFont)
                             .padding(AppTheme.Spacing.sm)
                             .background(AppTheme.field)
@@ -132,7 +98,7 @@ struct RunLogView: View {
                     .background(AppTheme.surface)
                     .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
 
-                    // Past Run Log History
+                    // Past Runs Log with Route Maps
                     pastRunsSection
                 }
                 .padding(.horizontal, AppTheme.Spacing.screenMargin)
@@ -144,7 +110,7 @@ struct RunLogView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
-                        stopLiveTimer()
+                        tracker.reset()
                         dismiss()
                     }
                     .foregroundStyle(AppTheme.textSecondary)
@@ -161,45 +127,59 @@ struct RunLogView: View {
                     }
                 }
             }
-            .alert("Finish & Save Run?", isPresented: $showFinishConfirmation) {
-                Button("Save Workout") {
+            .alert("Finish Run?", isPresented: $showFinishConfirmation) {
+                Button("Save & Record") {
                     saveLiveRun()
                     dismiss()
                 }
                 Button("Discard", role: .destructive) {
-                    resetLiveTracker()
+                    tracker.reset()
                 }
-                Button("Resume Running", role: .cancel) {
-                    resumeLiveTimer()
+                Button("Keep Running", role: .cancel) {
+                    tracker.resumeRun()
                 }
             } message: {
-                Text(String(format: "You ran %.2f miles in %@ at an average pace of %@.", liveDistanceMiles, liveFormattedTime, liveFormattedPace))
+                Text(String(format: "Recorded %.2f miles in %@ (Avg Pace: %@).", tracker.totalDistanceMiles, tracker.formattedElapsedTime, tracker.averagePaceFormatted))
+            }
+            .sheet(item: $selectedHistoricalRun) { run in
+                RunRouteDetailSheet(run: run)
             }
         }
     }
 
-    // MARK: - Live Tracker Card
-    private var liveTrackerCard: some View {
+    // MARK: - Live GPS Tracker View (Nike / Strava style)
+    private var liveGpsTrackerView: some View {
         VStack(spacing: AppTheme.Spacing.md) {
-            // Live Status Indicator
+            // Live Status Header Banner
             HStack {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Circle()
-                        .fill(isRunning ? AppTheme.primary : (isPaused ? AppTheme.carbsColor : AppTheme.textMuted))
+                        .fill(tracker.isTracking && !tracker.isPaused ? AppTheme.primary : (tracker.isPaused ? AppTheme.carbsColor : AppTheme.textMuted))
                         .frame(width: 10, height: 10)
-                        .scaleEffect(isRunning ? 1.2 : 1.0)
-                        .animation(isRunning ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default, value: isRunning)
+                        .scaleEffect(tracker.isTracking && !tracker.isPaused ? 1.25 : 1.0)
+                        .animation(tracker.isTracking && !tracker.isPaused ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default, value: tracker.isTracking)
 
-                    Text(isRunning ? "RECORDING RUN" : (isPaused ? "RUN PAUSED" : "READY TO RUN"))
+                    Text(tracker.isTracking && !tracker.isPaused ? "GPS LIVE TRACKING" : (tracker.isPaused ? "TRACKING PAUSED" : "GPS READY"))
                         .font(AppTheme.eyebrowFont)
                         .tracking(1.5)
-                        .foregroundStyle(isRunning ? AppTheme.primary : AppTheme.textSecondary)
+                        .foregroundStyle(tracker.isTracking && !tracker.isPaused ? AppTheme.primary : AppTheme.textSecondary)
                 }
 
                 Spacer()
 
-                if isRunning || isPaused {
-                    Text(liveCurrentSpeedPace)
+                if tracker.isSimulatedMovement {
+                    Text("SIMULATED")
+                        .font(AppTheme.captionFont)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(AppTheme.carbsColor)
+                        .clipShape(Capsule())
+                }
+
+                if tracker.isTracking {
+                    Text("GPS SPEED: \(String(format: "%.1f", tracker.currentSpeedMph)) MPH")
                         .font(AppTheme.captionFont)
                         .fontWeight(.bold)
                         .foregroundStyle(AppTheme.primary)
@@ -210,24 +190,82 @@ struct RunLogView: View {
                 }
             }
 
-            // Big Live Timer & Distance Hero
+            // Interactive Map View with Live Polyline & Pulse Marker
+            ZStack(alignment: .bottomTrailing) {
+                Map(position: $cameraPosition) {
+                    // Current User Location Pin & Pulse
+                    if let current = tracker.currentCoordinate {
+                        Annotation("Runner", coordinate: current) {
+                            ZStack {
+                                Circle()
+                                    .fill(AppTheme.primary.opacity(0.35))
+                                    .frame(width: 32, height: 32)
+                                Circle()
+                                    .fill(AppTheme.primary)
+                                    .frame(width: 16, height: 16)
+                                Circle()
+                                    .stroke(Color.black, lineWidth: 2)
+                                    .frame(width: 16, height: 16)
+                            }
+                        }
+                    }
+
+                    // Route Polyline (Strava Athletic Volt Glow)
+                    if tracker.routeCoordinates.count > 1 {
+                        MapPolyline(coordinates: tracker.routeCoordinates)
+                            .stroke(AppTheme.primary, lineWidth: 5)
+                    }
+                }
+                .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
+                .frame(height: 240)
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                        .strokeBorder(AppTheme.hairline, lineWidth: 1)
+                )
+
+                // Map Re-center Floating Action
+                VStack(spacing: 8) {
+                    Button(action: {
+                        if let current = tracker.currentCoordinate {
+                            withAnimation {
+                                cameraPosition = .region(MKCoordinateRegion(
+                                    center: current,
+                                    span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)
+                                ))
+                            }
+                        }
+                    }) {
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(width: 36, height: 36)
+                            .background(AppTheme.primary)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 2)
+                    }
+                    .padding(10)
+                }
+            }
+
+            // Big Live Timer Display
             VStack(spacing: 2) {
-                Text(liveFormattedTime)
-                    .font(.system(size: 54, weight: .black, design: .monospaced))
+                Text(tracker.formattedElapsedTime)
+                    .font(.system(size: 52, weight: .black, design: .monospaced))
                     .foregroundStyle(AppTheme.text)
                     .contentTransition(.numericText())
 
-                Text("ELAPSED TIME")
+                Text("DURATION")
                     .font(AppTheme.eyebrowFont)
                     .tracking(2.0)
                     .foregroundStyle(AppTheme.textMuted)
             }
-            .padding(.vertical, AppTheme.Spacing.xs)
+            .padding(.top, AppTheme.Spacing.xs)
 
-            // Primary Metrics Grid
-            HStack(spacing: AppTheme.Spacing.md) {
+            // Primary Running Metrics (Nike Run Club layout)
+            HStack(spacing: AppTheme.Spacing.sm) {
                 VStack(spacing: 2) {
-                    Text(String(format: "%.2f", liveDistanceMiles))
+                    Text(String(format: "%.2f", tracker.totalDistanceMiles))
                         .font(AppTheme.heroNumeralFont)
                         .foregroundStyle(AppTheme.primary)
                     Text("DISTANCE (MI)")
@@ -241,7 +279,21 @@ struct RunLogView: View {
                     .background(AppTheme.hairline)
 
                 VStack(spacing: 2) {
-                    Text(liveFormattedPace)
+                    Text(tracker.currentPaceFormatted)
+                        .font(AppTheme.heroNumeralFont)
+                        .foregroundStyle(AppTheme.primary)
+                    Text("CURRENT PACE")
+                        .font(AppTheme.eyebrowFont)
+                        .tracking(1.5)
+                        .foregroundStyle(AppTheme.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+
+                Divider()
+                    .background(AppTheme.hairline)
+
+                VStack(spacing: 2) {
+                    Text(tracker.averagePaceFormatted)
                         .font(AppTheme.heroNumeralFont)
                         .foregroundStyle(AppTheme.primary)
                     Text("AVG PACE")
@@ -253,34 +305,80 @@ struct RunLogView: View {
             }
             .padding(.vertical, AppTheme.Spacing.xs)
 
-            // Speed Control / Running Pace Adjustment (Pedometer / Treadmill / Live Speed dial)
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("PACE CADENCE SPEED")
+            // Live Mile Splits (Strava / Nike)
+            if !tracker.splits.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("MILE SPLITS")
                         .font(AppTheme.eyebrowFont)
-                        .tracking(1.2)
+                        .tracking(1.5)
                         .foregroundStyle(AppTheme.textMuted)
-                    Spacer()
-                    Text(String(format: "%.1f mph  (%@)", liveSpeedMph, liveCurrentSpeedPace))
-                        .font(AppTheme.subheadlineFont)
-                        .bold()
-                        .foregroundStyle(AppTheme.text)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(tracker.splits) { split in
+                                HStack(spacing: 4) {
+                                    Text("MILE \(split.mileNumber):")
+                                        .font(AppTheme.captionFont)
+                                        .foregroundStyle(AppTheme.textSecondary)
+                                    Text(split.formattedPace)
+                                        .font(AppTheme.captionFont)
+                                        .bold()
+                                        .foregroundStyle(AppTheme.primary)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(AppTheme.field)
+                                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Indoor / Simulator Movement Assist Toggle
+            HStack {
+                Button(action: {
+                    tracker.toggleSimulation(targetMph: simulationSpeedMph)
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: tracker.isSimulatedMovement ? "figure.run.circle.fill" : "figure.run.circle")
+                        Text(tracker.isSimulatedMovement ? "Simulating GPS Trail" : "Simulate Live Route")
+                    }
+                    .font(AppTheme.captionFont)
+                    .foregroundStyle(tracker.isSimulatedMovement ? AppTheme.primary : AppTheme.textSecondary)
                 }
 
-                Slider(value: $liveSpeedMph, in: 3.0...12.0, step: 0.1)
-                    .tint(AppTheme.primary)
-            }
-            .padding(AppTheme.Spacing.sm)
-            .background(AppTheme.ground.opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
+                Spacer()
 
-            // Action Buttons (Start, Pause, Resume, Finish)
+                if tracker.isSimulatedMovement {
+                    HStack(spacing: 4) {
+                        Text(String(format: "%.1f mph", simulationSpeedMph))
+                            .font(AppTheme.captionFont)
+                            .foregroundStyle(AppTheme.text)
+                        
+                        Stepper("", value: $simulationSpeedMph, in: 4.0...12.0, step: 0.5)
+                            .labelsHidden()
+                            .onChange(of: simulationSpeedMph) { _, newValue in
+                                if tracker.isSimulatedMovement {
+                                    tracker.toggleSimulation()
+                                    tracker.toggleSimulation(targetMph: newValue)
+                                }
+                            }
+                    }
+                }
+            }
+            .padding(.horizontal, 4)
+
+            // Primary Control Buttons (Start, Pause, Resume, Finish)
             HStack(spacing: AppTheme.Spacing.sm) {
-                if !isRunning && !isPaused {
-                    Button(action: startLiveTimer) {
+                if !tracker.isTracking && !tracker.isPaused {
+                    Button(action: {
+                        tracker.startRun()
+                    }) {
                         HStack {
                             Image(systemName: "play.fill")
-                            Text("START RUN")
+                            Text("START GPS RUN")
                         }
                         .font(AppTheme.headlineFont)
                         .foregroundStyle(.black)
@@ -289,8 +387,10 @@ struct RunLogView: View {
                         .background(AppTheme.primary)
                         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
                     }
-                } else if isRunning {
-                    Button(action: pauseLiveTimer) {
+                } else if tracker.isTracking && !tracker.isPaused {
+                    Button(action: {
+                        tracker.pauseRun()
+                    }) {
                         HStack {
                             Image(systemName: "pause.fill")
                             Text("PAUSE")
@@ -303,7 +403,10 @@ struct RunLogView: View {
                         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
                     }
 
-                    Button(action: { showFinishConfirmation = true }) {
+                    Button(action: {
+                        tracker.pauseRun()
+                        showFinishConfirmation = true
+                    }) {
                         HStack {
                             Image(systemName: "flag.checkered")
                             Text("FINISH")
@@ -315,8 +418,10 @@ struct RunLogView: View {
                         .background(AppTheme.accent)
                         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
                     }
-                } else if isPaused {
-                    Button(action: resumeLiveTimer) {
+                } else if tracker.isPaused {
+                    Button(action: {
+                        tracker.resumeRun()
+                    }) {
                         HStack {
                             Image(systemName: "play.fill")
                             Text("RESUME")
@@ -329,7 +434,9 @@ struct RunLogView: View {
                         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
                     }
 
-                    Button(action: { showFinishConfirmation = true }) {
+                    Button(action: {
+                        showFinishConfirmation = true
+                    }) {
                         HStack {
                             Image(systemName: "flag.checkered")
                             Text("FINISH")
@@ -344,20 +451,19 @@ struct RunLogView: View {
                 }
             }
         }
-        .padding(AppTheme.Spacing.lg)
+        .padding(AppTheme.Spacing.md)
         .frame(maxWidth: .infinity)
         .background(AppTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radii.card)
-                .strokeBorder(isRunning ? AppTheme.primary.opacity(0.5) : AppTheme.hairline, lineWidth: 1.5)
+                .strokeBorder(tracker.isTracking && !tracker.isPaused ? AppTheme.primary.opacity(0.6) : AppTheme.hairline, lineWidth: 1.5)
         )
     }
 
     // MARK: - Manual Entry Card
     private var manualEntryCard: some View {
         VStack(spacing: AppTheme.Spacing.md) {
-            // Hero Pace & Distance Display
             VStack(spacing: AppTheme.Spacing.md) {
                 Text("ESTIMATED PACE")
                     .font(AppTheme.eyebrowFont)
@@ -378,19 +484,13 @@ struct RunLogView: View {
             .frame(maxWidth: .infinity)
             .background(AppTheme.surface)
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppTheme.Radii.card)
-                    .strokeBorder(AppTheme.primary.opacity(0.25))
-            )
 
-            // Manual Slider Inputs
             VStack(alignment: .leading, spacing: AppTheme.Spacing.md) {
                 Text("MANUAL LOG VALUES")
                     .font(AppTheme.eyebrowFont)
                     .tracking(1.5)
                     .foregroundStyle(AppTheme.textSecondary)
 
-                // Distance Slider
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text("Distance")
@@ -405,7 +505,6 @@ struct RunLogView: View {
                         .tint(AppTheme.primary)
                 }
 
-                // Time Pickers
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Duration")
                         .font(AppTheme.subheadlineFont)
@@ -444,10 +543,10 @@ struct RunLogView: View {
         }
     }
 
-    // MARK: - Past Runs List
+    // MARK: - Past Runs List with Interactive Map Replay
     private var pastRunsSection: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
-            Text("PAST RUNS")
+            Text("RUN LOG & SAVED ROUTES")
                 .font(AppTheme.eyebrowFont)
                 .tracking(1.5)
                 .foregroundStyle(AppTheme.textSecondary)
@@ -458,25 +557,53 @@ struct RunLogView: View {
                     .foregroundStyle(AppTheme.textMuted)
             } else {
                 ForEach(pastRuns) { run in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(run.title)
-                                .font(AppTheme.headlineFont)
-                                .foregroundStyle(AppTheme.text)
-                            Text("\(String(format: "%.2f", run.distanceMiles)) mi · \(run.formattedDuration) · \(run.formattedPace)")
-                                .font(AppTheme.captionFont)
-                                .foregroundStyle(AppTheme.textSecondary)
+                    Button(action: {
+                        selectedHistoricalRun = run
+                    }) {
+                        HStack(spacing: 12) {
+                            // Mini Route / Map Icon
+                            ZStack {
+                                RoundedRectangle(cornerRadius: AppTheme.Radii.tag)
+                                    .fill(AppTheme.field)
+                                    .frame(width: 44, height: 44)
+
+                                Image(systemName: run.decodedRouteCoordinates.isEmpty ? "figure.run" : "map.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(AppTheme.primary)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(run.title)
+                                    .font(AppTheme.headlineFont)
+                                    .foregroundStyle(AppTheme.text)
+                                Text("\(String(format: "%.2f", run.distanceMiles)) mi · \(run.formattedDuration) · \(run.formattedPace)")
+                                    .font(AppTheme.captionFont)
+                                    .foregroundStyle(AppTheme.textSecondary)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(run.date.formatted(.dateTime.month().day()))
+                                    .font(AppTheme.captionFont)
+                                    .foregroundStyle(AppTheme.textMuted)
+                                
+                                if !run.decodedRouteCoordinates.isEmpty {
+                                    Text("MAP ROUTE")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundStyle(AppTheme.primary)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 2)
+                                        .background(AppTheme.primary.opacity(0.15))
+                                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                                }
+                            }
                         }
-
-                        Spacer()
-
-                        Text(run.date.formatted(.dateTime.month().day()))
-                            .font(AppTheme.captionFont)
-                            .foregroundStyle(AppTheme.textMuted)
+                        .padding(AppTheme.Spacing.sm)
+                        .background(AppTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
                     }
-                    .padding(AppTheme.Spacing.sm)
-                    .background(AppTheme.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -494,53 +621,18 @@ struct RunLogView: View {
         }
     }
 
-    // MARK: - Live Timer Methods
-    private func startLiveTimer() {
-        isRunning = true
-        isPaused = false
-        timerSubscription = Timer.publish(every: 1.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { _ in
-                elapsedSeconds += 1
-                // Add distance increment according to active speed: (speed in mph / 3600 seconds per hour)
-                let distanceDelta = liveSpeedMph / 3600.0
-                liveDistanceMiles += distanceDelta
-            }
-    }
-
-    private func pauseLiveTimer() {
-        isRunning = false
-        isPaused = true
-        timerSubscription?.cancel()
-        timerSubscription = nil
-    }
-
-    private func resumeLiveTimer() {
-        startLiveTimer()
-    }
-
-    private func stopLiveTimer() {
-        isRunning = false
-        isPaused = false
-        timerSubscription?.cancel()
-        timerSubscription = nil
-    }
-
-    private func resetLiveTracker() {
-        stopLiveTimer()
-        elapsedSeconds = 0
-        liveDistanceMiles = 0.0
-    }
-
+    // MARK: - Save Handlers
     private func saveLiveRun() {
-        stopLiveTimer()
+        let (dist, dur, cals, _, routeCoords) = tracker.stopAndFinalizeRun()
+        
         let entry = RunEntry(
             title: runTitle.isEmpty ? "Outdoor Run" : runTitle,
-            distanceMiles: max(0.05, liveDistanceMiles),
-            durationSeconds: max(1, elapsedSeconds),
+            distanceMiles: max(0.01, dist),
+            durationSeconds: max(1, dur),
             date: Date(),
-            caloriesBurned: liveCaloriesBurned,
-            notes: notes
+            caloriesBurned: cals,
+            notes: notes,
+            routeCoordinates: routeCoords
         )
         modelContext.insert(entry)
         try? modelContext.save()
@@ -557,5 +649,132 @@ struct RunLogView: View {
         )
         modelContext.insert(entry)
         try? modelContext.save()
+    }
+}
+
+// MARK: - Run Route Detail Sheet (Historical GPS Replay)
+struct RunRouteDetailSheet: View {
+    let run: RunEntry
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: AppTheme.Spacing.lg) {
+                    // Map View of the logged route
+                    let coordinates = run.decodedRouteCoordinates
+                    if !coordinates.isEmpty {
+                        Map {
+                            MapPolyline(coordinates: coordinates)
+                                .stroke(AppTheme.primary, lineWidth: 6)
+
+                            if let start = coordinates.first {
+                                Annotation("Start", coordinate: start) {
+                                    Circle()
+                                        .fill(AppTheme.primary)
+                                        .frame(width: 14, height: 14)
+                                        .overlay(Circle().stroke(Color.black, lineWidth: 2))
+                                }
+                            }
+
+                            if let finish = coordinates.last {
+                                Annotation("Finish", coordinate: finish) {
+                                    Image(systemName: "flag.checkered.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(AppTheme.accent)
+                                        .background(Circle().fill(Color.black))
+                                }
+                            }
+                        }
+                        .frame(height: 280)
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                                .strokeBorder(AppTheme.hairline, lineWidth: 1)
+                        )
+                    } else {
+                        VStack(spacing: 8) {
+                            Image(systemName: "map")
+                                .font(.system(size: 32))
+                                .foregroundStyle(AppTheme.textMuted)
+                            Text("Manual Entry — No GPS breadcrumbs recorded")
+                                .font(AppTheme.captionFont)
+                                .foregroundStyle(AppTheme.textMuted)
+                        }
+                        .frame(height: 140)
+                        .frame(maxWidth: .infinity)
+                        .background(AppTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                    }
+
+                    // Run Metrics Summary Hero
+                    VStack(spacing: AppTheme.Spacing.md) {
+                        Text(run.title)
+                            .font(AppTheme.displayFont)
+                            .foregroundStyle(AppTheme.text)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text(run.date.formatted(date: .long, time: .shortened))
+                            .font(AppTheme.captionFont)
+                            .foregroundStyle(AppTheme.textMuted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Divider().background(AppTheme.hairline)
+
+                        HStack(spacing: AppTheme.Spacing.md) {
+                            metricBox(label: "DISTANCE", value: "\(String(format: "%.2f", run.distanceMiles)) mi")
+                            metricBox(label: "TIME", value: run.formattedDuration)
+                            metricBox(label: "AVG PACE", value: run.formattedPace)
+                            metricBox(label: "CALORIES", value: "\(run.caloriesBurned) kcal")
+                        }
+                    }
+                    .padding(AppTheme.Spacing.md)
+                    .background(AppTheme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+
+                    if !run.notes.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("RUN NOTES")
+                                .font(AppTheme.eyebrowFont)
+                                .tracking(1.5)
+                                .foregroundStyle(AppTheme.textSecondary)
+
+                            Text(run.notes)
+                                .font(AppTheme.bodyFont)
+                                .foregroundStyle(AppTheme.text)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(AppTheme.Spacing.md)
+                        .background(AppTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                    }
+                }
+                .padding(AppTheme.Spacing.screenMargin)
+            }
+            .background(AppTheme.ground.ignoresSafeArea())
+            .navigationTitle("Run Summary")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundStyle(AppTheme.primary)
+                }
+            }
+        }
+    }
+
+    private func metricBox(label: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(AppTheme.eyebrowFont)
+                .foregroundStyle(AppTheme.textMuted)
+            Text(value)
+                .font(AppTheme.subheadlineFont)
+                .bold()
+                .foregroundStyle(AppTheme.primary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }

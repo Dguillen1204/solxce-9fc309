@@ -1,6 +1,7 @@
 // Models/AppModels.swift
 import Foundation
 import SwiftData
+import CoreLocation
 
 // MARK: - Exercise Set
 @Model
@@ -85,6 +86,7 @@ final class RunEntry {
     var date: Date
     var caloriesBurned: Int
     var notes: String
+    var routeDataJson: String // Serialized array of [[Double]] (lat, lon) for GPS route map replay
 
     init(
         id: UUID = UUID(),
@@ -93,7 +95,8 @@ final class RunEntry {
         durationSeconds: Int,
         date: Date = Date(),
         caloriesBurned: Int = 0,
-        notes: String = ""
+        notes: String = "",
+        routeCoordinates: [CLLocationCoordinate2D] = []
     ) {
         self.id = id
         self.title = title
@@ -102,6 +105,13 @@ final class RunEntry {
         self.date = date
         self.caloriesBurned = caloriesBurned > 0 ? caloriesBurned : Int(distanceMiles * 110)
         self.notes = notes
+        
+        let pairs = routeCoordinates.map { [$0.latitude, $0.longitude] }
+        if let data = try? JSONEncoder().encode(pairs), let json = String(data: data, encoding: .utf8) {
+            self.routeDataJson = json
+        } else {
+            self.routeDataJson = "[]"
+        }
     }
 
     var paceMinutesPerMile: Double {
@@ -113,13 +123,29 @@ final class RunEntry {
         let pace = paceMinutesPerMile
         let mins = Int(pace)
         let secs = Int((pace - Double(mins)) * 60)
-        return String(format: "%d'%02d\" /mi", mins, secs)
+        return String(format: "%d'%02d\" /mi", mins, max(0, min(59, secs)))
     }
 
     var formattedDuration: String {
         let mins = durationSeconds / 60
         let secs = durationSeconds % 60
+        if mins >= 60 {
+            let hrs = mins / 60
+            let remMins = mins % 60
+            return String(format: "%d:%02d:%02d", hrs, remMins, secs)
+        }
         return String(format: "%d:%02d", mins, secs)
+    }
+    
+    var decodedRouteCoordinates: [CLLocationCoordinate2D] {
+        guard let data = routeDataJson.data(using: .utf8),
+              let pairs = try? JSONDecoder().decode([[Double]].self, from: data) else {
+            return []
+        }
+        return pairs.compactMap { pair in
+            guard pair.count == 2 else { return nil }
+            return CLLocationCoordinate2D(latitude: pair[0], longitude: pair[1])
+        }
     }
 }
 
