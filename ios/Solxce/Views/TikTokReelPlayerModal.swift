@@ -105,7 +105,7 @@ struct TikTokReelPlayerModal: View {
                 isPlaying.toggle()
             }
 
-            // Top Bar Controls (Close, Sound indicator)
+            // Top Bar Controls (Close, Sound indicator with Apple Music / Spotify branding)
             VStack {
                 HStack {
                     Button {
@@ -121,9 +121,13 @@ struct TikTokReelPlayerModal: View {
 
                     Spacer()
 
-                    // Audio Pill in top header
+                    // Audio Pill in top header with streaming service badge
                     if let audio = post.audioTrack {
                         HStack(spacing: 6) {
+                            Image(systemName: audio.platform.iconName)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(audio.platform.brandColor)
+
                             EqualizerAnimationView()
                                 .frame(width: 14, height: 12)
                                 .foregroundColor(AppTheme.primary)
@@ -132,7 +136,7 @@ struct TikTokReelPlayerModal: View {
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
-                                .frame(maxWidth: 180, alignment: .leading)
+                                .frame(maxWidth: 160, alignment: .leading)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
@@ -226,19 +230,19 @@ struct TikTokReelPlayerModal: View {
                         }
                     }
 
-                    // Rotating Vinyl Sound Disc (TikTok style)
+                    // Rotating Vinyl Sound Disc (TikTok style with Platform color)
                     if let audio = post.audioTrack {
                         ZStack {
                             Circle()
                                 .fill(Color.black)
                                 .frame(width: 44, height: 44)
                                 .overlay(
-                                    Circle().stroke(AppTheme.primary, lineWidth: 2)
+                                    Circle().stroke(audio.platform.brandColor, lineWidth: 2)
                                 )
 
-                            Image(systemName: "music.note")
+                            Image(systemName: audio.platform.iconName)
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(AppTheme.primary)
+                                .foregroundColor(audio.platform.brandColor)
                         }
                     }
 
@@ -285,16 +289,20 @@ struct TikTokReelPlayerModal: View {
                         .foregroundColor(.white)
                         .lineLimit(2)
 
-                    // Audio Track Marquee
+                    // Audio Track Marquee with Platform Pill
                     if let audio = post.audioTrack {
                         HStack(spacing: 6) {
-                            Image(systemName: "music.note")
+                            Image(systemName: audio.platform.iconName)
                                 .font(.system(size: 11))
-                                .foregroundColor(AppTheme.primary)
+                                .foregroundColor(audio.platform.brandColor)
 
                             Text("\(audio.title) · \(audio.artist)")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.white.opacity(0.9))
+
+                            Text("• \(audio.bpm) BPM")
+                                .font(AppTheme.monoFont)
+                                .foregroundColor(AppTheme.primary)
                         }
                     }
 

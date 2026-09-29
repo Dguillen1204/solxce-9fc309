@@ -37,7 +37,7 @@ struct CreateMediaPostSheet: View {
                     // 2. Interactive Media Preview Viewport (Instagram / TikTok style)
                     mediaPreviewViewport
 
-                    // 3. Audio & Music Soundtrack Selection Bar
+                    // 3. Audio & Music Soundtrack Selection Bar (Apple Music & Spotify)
                     audioTrackSelectorBar
 
                     // 4. Filter & Visual Look Chips
@@ -211,8 +211,6 @@ struct CreateMediaPostSheet: View {
                             if selectedMediaType == .video {
                                 isSimulatingRecording.toggle()
                                 if !isSimulatingRecording { recordSeconds = 0 }
-                            } else {
-                                // Simulate shutter flash
                             }
                         } label: {
                             Image(systemName: selectedMediaType == .video ? (isSimulatingRecording ? "stop.circle.fill" : "record.circle") : "camera.fill")
@@ -264,7 +262,7 @@ struct CreateMediaPostSheet: View {
         }
     }
 
-    // MARK: - 3. Audio & Music Soundtrack Selection Bar
+    // MARK: - 3. Audio & Music Soundtrack Selection Bar (Apple Music & Spotify)
     private var audioTrackSelectorBar: some View {
         Button {
             showingAudioPicker = true
@@ -272,29 +270,33 @@ struct CreateMediaPostSheet: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(AppTheme.primary.opacity(0.2))
-                        .frame(width: 40, height: 40)
+                        .fill(selectedAudio != nil ? selectedAudio!.platform.brandColor.opacity(0.2) : AppTheme.primary.opacity(0.2))
+                        .frame(width: 42, height: 42)
 
-                    Image(systemName: selectedAudio != nil ? "music.note" : "music.note.list")
+                    Image(systemName: selectedAudio != nil ? selectedAudio!.platform.iconName : "music.note.list")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(AppTheme.primary)
+                        .foregroundColor(selectedAudio != nil ? selectedAudio!.platform.brandColor : AppTheme.primary)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text("BACKGROUND AUDIO & SOUNDS")
+                        Text("SOUNDTRACK")
                             .font(.system(size: 10, weight: .black))
                             .foregroundColor(AppTheme.primary)
                             .tracking(1)
 
-                        if selectedAudio != nil {
-                            Text("ACTIVE")
-                                .font(.system(size: 8, weight: .heavy))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(AppTheme.primary)
-                                .foregroundColor(AppTheme.onPrimary)
-                                .clipShape(Capsule())
+                        if let audio = selectedAudio {
+                            HStack(spacing: 2) {
+                                Image(systemName: audio.platform.iconName)
+                                    .font(.system(size: 8))
+                                Text(audio.platform.rawValue)
+                                    .font(.system(size: 8, weight: .black))
+                            }
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1.5)
+                            .background(audio.platform.brandColor.opacity(0.2))
+                            .foregroundColor(audio.platform.brandColor)
+                            .clipShape(Capsule())
                         }
                     }
 
@@ -305,7 +307,7 @@ struct CreateMediaPostSheet: View {
                             .foregroundColor(AppTheme.text)
                             .lineLimit(1)
                     } else {
-                        Text("Add gym phonk, hardstyle, or hype workout music...")
+                        Text("Add Apple Music or Spotify gym tracks & artists...")
                             .font(AppTheme.captionFont)
                             .foregroundColor(AppTheme.textMuted)
                             .lineLimit(1)
@@ -323,7 +325,7 @@ struct CreateMediaPostSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.Radii.card)
-                    .stroke(AppTheme.hairline, lineWidth: 1)
+                    .stroke(selectedAudio != nil ? selectedAudio!.platform.brandColor.opacity(0.5) : AppTheme.hairline, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

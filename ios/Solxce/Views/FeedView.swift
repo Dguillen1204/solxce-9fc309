@@ -142,7 +142,7 @@ struct FeedView: View {
             mediaType: .video,
             mediaIconName: "figure.run",
             gradientColors: [Color(red: 0.05, green: 0.15, blue: 0.3), Color(red: 0.1, green: 0.3, blue: 0.5)],
-            audioTrack: AudioTrack.library[3],
+            audioTrack: AudioTrack.library[10], // The Weeknd - Blinding Lights (Apple Music)
             textOverlay: "SUB-45 10K SUNSET ⚡",
             likesCount: 89,
             isLiked: true,
@@ -162,7 +162,7 @@ struct FeedView: View {
             mediaType: .photo,
             mediaIconName: "bolt.shield.fill",
             gradientColors: [Color(red: 0.15, green: 0.2, blue: 0.05), Color(red: 0.25, green: 0.35, blue: 0.1)],
-            audioTrack: AudioTrack.library[2],
+            audioTrack: AudioTrack.library[6], // DVRST - Close Eyes (Spotify)
             textOverlay: "HYBRID OVERLOAD",
             likesCount: 215,
             isLiked: false,
@@ -182,7 +182,7 @@ struct FeedView: View {
             mediaType: .video,
             mediaIconName: "figure.gymnastics",
             gradientColors: [Color(red: 0.05, green: 0.2, blue: 0.15), Color(red: 0.1, green: 0.35, blue: 0.25)],
-            audioTrack: AudioTrack.library[4],
+            audioTrack: AudioTrack.library[8], // Tevez - Hardstyle Overload (Spotify)
             textOverlay: "STRICT RINGS",
             likesCount: 167,
             isLiked: true,
@@ -298,7 +298,7 @@ struct FeedView: View {
             Image(systemName: "sparkles.tv.fill")
                 .font(.system(size: 11))
                 .foregroundColor(AppTheme.primary)
-            Text("ATHLETE FEED · Videos, Photos & Audio Beats")
+            Text("ATHLETE FEED · Apple Music & Spotify Beats")
                 .font(AppTheme.eyebrowFont)
                 .foregroundColor(AppTheme.textSecondary)
                 .tracking(1.2)
@@ -479,9 +479,13 @@ struct PostCardView: View {
             }
             .padding(12)
 
-            // Audio Track Bar (if soundtrack selected)
+            // Audio Track Bar with Apple Music & Spotify badge
             if let audio = post.audioTrack {
                 HStack(spacing: 8) {
+                    Image(systemName: audio.platform.iconName)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(audio.platform.brandColor)
+
                     EqualizerAnimationView()
                         .frame(width: 14, height: 12)
                         .foregroundColor(AppTheme.primary)
@@ -493,9 +497,19 @@ struct PostCardView: View {
 
                     Spacer()
 
-                    Text(audio.genre.uppercased())
-                        .font(.system(size: 8, weight: .black))
-                        .foregroundColor(AppTheme.textMuted)
+                    HStack(spacing: 4) {
+                        Text(audio.platform.rawValue)
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(audio.platform.brandColor)
+
+                        Text("•")
+                            .font(.system(size: 8))
+                            .foregroundColor(AppTheme.textMuted)
+
+                        Text("\(audio.bpm) BPM")
+                            .font(AppTheme.monoFont)
+                            .foregroundColor(AppTheme.primary)
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
