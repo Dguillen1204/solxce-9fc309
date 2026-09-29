@@ -7,6 +7,7 @@ struct FoodLogView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FoodEntry.date, order: .reverse) private var allFoods: [FoodEntry]
     @Query private var macroTargets: [MacroTarget]
+    @ObservedObject private var subManager = SubscriptionManager.shared
 
     @State private var foodName: String = ""
     @State private var mealType: String = "Breakfast"
@@ -14,6 +15,8 @@ struct FoodLogView: View {
     @State private var protein: Int = 25
     @State private var carbs: Int = 30
     @State private var fat: Int = 10
+    @State private var showCameraScanner: Bool = false
+    @State private var showPaywall: Bool = false
 
     let mealOptions = ["Breakfast", "Lunch", "Dinner", "Snack"]
 
@@ -62,9 +65,12 @@ struct FoodLogView: View {
                     .background(AppTheme.surface)
                     .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
 
+                    // AI Camera Fast Log CTA Banner
+                    cameraFastLogBanner
+
                     // Quick Add Food Form
                     VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
-                        Text("ADD FOOD ITEM")
+                        Text("MANUAL FOOD ENTRY")
                             .font(AppTheme.eyebrowFont)
                             .tracking(1.5)
                             .foregroundStyle(AppTheme.textSecondary)
@@ -170,13 +176,84 @@ struct FoodLogView: View {
             .navigationTitle("Macro Food Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showCameraScanner = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "camera.fill")
+                            Text("Scan")
+                        }
+                        .font(AppTheme.subheadlineFont)
+                        .foregroundStyle(AppTheme.primary)
+                    }
+                }
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                         .font(AppTheme.headlineFont)
                         .foregroundStyle(AppTheme.primary)
                 }
             }
+            .sheet(isPresented: $showCameraScanner) {
+                CameraFoodScannerView()
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
         }
+    }
+
+    private var cameraFastLogBanner: some View {
+        Button {
+            showCameraScanner = true
+        } label: {
+            HStack(spacing: AppTheme.Spacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(AppTheme.primary.opacity(0.18))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "camera.viewfinder")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(AppTheme.primary)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text("Log Faster with AI Camera")
+                            .font(AppTheme.headlineFont)
+                            .foregroundStyle(AppTheme.text)
+                        if !subManager.isPro {
+                            Text("PRO")
+                                .font(.system(size: 10, weight: .black))
+                                .foregroundStyle(AppTheme.onPrimary)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(AppTheme.primary)
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    Text("Snap a photo to calculate macros instantly")
+                        .font(AppTheme.captionFont)
+                        .foregroundStyle(AppTheme.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppTheme.primary)
+            }
+            .padding(AppTheme.Spacing.md)
+            .background(AppTheme.surfaceRaised)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                    .strokeBorder(AppTheme.primary.opacity(0.4), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private func macroPill(label: String, val: Int, goal: Int, color: Color) -> some View {

@@ -7,8 +7,12 @@ struct ProfileView: View {
     @Query private var workoutSessions: [WorkoutSession]
     @Query private var runEntries: [RunEntry]
     @Query private var macroTargets: [MacroTarget]
+    @ObservedObject private var subManager = SubscriptionManager.shared
 
     @State private var showingEditGoals = false
+    @State private var showingPaywall = false
+    @State private var showingProgressReport = false
+    @State private var showingFastingTracker = false
 
     var totalVolumeLbs: Double {
         workoutSessions.reduce(0) { $0 + $1.totalVolumeLbs }
@@ -33,6 +37,12 @@ struct ProfileView: View {
                     // Profile Header & Avatar
                     profileHeader
 
+                    // Solxce Pro Membership Card
+                    proMembershipCard
+
+                    // In-Depth Analytics Shortcut
+                    inDepthReportShortcut
+
                     // Aggregate Lifetime Stats
                     lifetimeStatsCard
 
@@ -53,6 +63,15 @@ struct ProfileView: View {
                 if let currentTarget = target {
                     EditMacroGoalsSheet(target: currentTarget)
                 }
+            }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView()
+            }
+            .sheet(isPresented: $showingProgressReport) {
+                ProgressReportView()
+            }
+            .sheet(isPresented: $showingFastingTracker) {
+                FastingTrackerView()
             }
         }
     }
@@ -75,9 +94,21 @@ struct ProfileView: View {
             }
 
             VStack(spacing: 2) {
-                Text("Athlete")
-                    .font(AppTheme.largeTitleFont)
-                    .foregroundStyle(AppTheme.text)
+                HStack(spacing: 6) {
+                    Text("Athlete")
+                        .font(AppTheme.largeTitleFont)
+                        .foregroundStyle(AppTheme.text)
+
+                    if subManager.isPro {
+                        Text("PRO")
+                            .font(.system(size: 11, weight: .black))
+                            .foregroundStyle(AppTheme.onPrimary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(AppTheme.primary)
+                            .clipShape(Capsule())
+                    }
+                }
 
                 Text("@solxce_athlete · Dedicated Lifter & Runner")
                     .font(AppTheme.captionFont)
@@ -86,6 +117,82 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppTheme.Spacing.md)
+    }
+
+    // MARK: - Pro Membership Card
+    private var proMembershipCard: some View {
+        Button {
+            showingPaywall = true
+        } label: {
+            HStack(spacing: AppTheme.Spacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(AppTheme.primary.opacity(0.18))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: subManager.isPro ? "crown.fill" : "sparkles")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(AppTheme.primary)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(subManager.isPro ? "Solxce Pro Active" : "Upgrade to Solxce Pro")
+                            .font(AppTheme.headlineFont)
+                            .foregroundStyle(AppTheme.text)
+
+                        Text(subManager.isPro ? subManager.activePlan.title : "$15/mo or $80/yr")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(AppTheme.onPrimary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(AppTheme.primary)
+                            .clipShape(Capsule())
+                    }
+
+                    Text(subManager.isPro ? "Camera food scan, fasting alerts & deep analytics active." : "Unlock camera food scan, fasting alerts & deep analytics.")
+                        .font(AppTheme.captionFont)
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppTheme.primary)
+            }
+            .padding(AppTheme.Spacing.md)
+            .background(AppTheme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                    .strokeBorder(AppTheme.primary.opacity(0.4), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - In-Depth Report Shortcut
+    private var inDepthReportShortcut: some View {
+        Button {
+            showingProgressReport = true
+        } label: {
+            HStack {
+                Image(systemName: "chart.xyaxis.line")
+                    .foregroundStyle(AppTheme.primary)
+                Text("View In-Depth Progress Report")
+                    .font(AppTheme.headlineFont)
+                    .foregroundStyle(AppTheme.text)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppTheme.textMuted)
+            }
+            .padding(AppTheme.Spacing.md)
+            .background(AppTheme.surfaceRaised)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Lifetime Stats Card
