@@ -9,6 +9,20 @@ enum SeedDataManager {
         let count = (try? context.fetchCount(descriptor)) ?? 0
         guard count == 0 else { return }
 
+        // 0. Seed User Profile if absent
+        let profileDescriptor = FetchDescriptor<UserProfile>()
+        let profileCount = (try? context.fetchCount(profileDescriptor)) ?? 0
+        if profileCount == 0 {
+            let profile = UserProfile(
+                fullName: "Alex Rivera",
+                handle: "alex_solxce",
+                athleteType: .hybrid,
+                bio: "Hybrid athlete chasing 500lb deadlifts and sub-20min 5Ks.",
+                avatarSymbol: "bolt.shield.fill"
+            )
+            context.insert(profile)
+        }
+
         // 1. Seed Macro Target
         let target = MacroTarget(
             dailyCalories: 2450,

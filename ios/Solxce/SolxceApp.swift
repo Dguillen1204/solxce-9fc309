@@ -9,6 +9,7 @@ struct SolxceApp: App {
             ContentView()
         }
         .modelContainer(for: [
+            UserProfile.self,
             WorkoutSession.self,
             WorkoutExercise.self,
             ExerciseSet.self,
@@ -22,8 +23,11 @@ struct SolxceApp: App {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("solxce_has_completed_athlete_signup") private var hasCompletedSignup: Bool = false
+
     @State private var selectedTab: Int = 0
     @State private var showAICoachSheet: Bool = false
+    @State private var showSignUpSheet: Bool = false
 
     init() {
         // Customize TabBar appearance for Athletic Volt theme
@@ -73,8 +77,14 @@ struct ContentView: View {
             AICoachChatView()
                 .presentationDragIndicator(.visible)
         }
+        .fullScreenCover(isPresented: $showSignUpSheet) {
+            OnboardingAthleteSignUpView(isCompleted: $hasCompletedSignup)
+        }
         .onAppear {
             SeedDataManager.seedIfNeeded(context: modelContext)
+            if !hasCompletedSignup {
+                showSignUpSheet = true
+            }
         }
     }
 

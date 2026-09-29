@@ -2,6 +2,126 @@
 import Foundation
 import SwiftData
 import CoreLocation
+import SwiftUI
+
+// MARK: - Athlete Archetype
+public enum AthleteType: String, CaseIterable, Codable, Identifiable {
+    case hybrid = "Hybrid Athlete"
+    case runner = "Endurance Runner"
+    case powerlifter = "Powerlifter"
+    case bodybuilder = "Bodybuilder"
+    case functional = "CrossFit & Functional"
+    case calisthenics = "Calisthenics Athlete"
+    case allAround = "All-Around Fitness"
+
+    public var id: String { rawValue }
+
+    public var iconName: String {
+        switch self {
+        case .hybrid: return "bolt.shield.fill"
+        case .runner: return "figure.run"
+        case .powerlifter: return "figure.strengthtraining.traditional"
+        case .bodybuilder: return "figure.arms.open"
+        case .functional: return "flame.fill"
+        case .calisthenics: return "figure.gymnastics"
+        case .allAround: return "figure.cross-training"
+        }
+    }
+
+    public var shortTag: String {
+        switch self {
+        case .hybrid: return "HYBRID"
+        case .runner: return "RUNNER"
+        case .powerlifter: return "POWERLIFTER"
+        case .bodybuilder: return "BODYBUILDER"
+        case .functional: return "FUNCTIONAL"
+        case .calisthenics: return "CALISTHENICS"
+        case .allAround: return "ALL-AROUND"
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .hybrid:
+            return "Lifts heavy iron & logs long miles. Unmatched dual-threat engine."
+        case .runner:
+            return "Chasing pace PRs, marathon splits, and aerobic endurance."
+        case .powerlifter:
+            return "Pure raw strength: SBD (Squat, Bench, Deadlift) and heavy singles."
+        case .bodybuilder:
+            return "Muscle hypertrophy, progressive overload, and macro precision."
+        case .functional:
+            return "High-intensity metabolic conditioning, WODs, and explosive output."
+        case .calisthenics:
+            return "Bodyweight mastery, lever holds, muscle-ups, and relative strength."
+        case .allAround:
+            return "Balanced training for general health, energy, and overall longevity."
+        }
+    }
+
+    public var badgeColorHex: String {
+        switch self {
+        case .hybrid: return "#D4FF3F"       // Athletic Volt
+        case .runner: return "#38BDF8"       // Sky Blue
+        case .powerlifter: return "#FF3B5C"   // Crimson
+        case .bodybuilder: return "#A855F7"   // Purple
+        case .functional: return "#F97316"    // Orange
+        case .calisthenics: return "#10B981"  // Emerald
+        case .allAround: return "#FBBF24"     // Amber
+        }
+    }
+
+    public var badgeColor: Color {
+        switch self {
+        case .hybrid: return Color(red: 0.831, green: 1.0, blue: 0.247)       // #D4FF3F
+        case .runner: return Color(red: 0.22, green: 0.74, blue: 0.97)        // #38BDF8
+        case .powerlifter: return Color(red: 1.0, green: 0.231, blue: 0.361)  // #FF3B5C
+        case .bodybuilder: return Color(red: 0.66, green: 0.33, blue: 0.97)   // #A855F7
+        case .functional: return Color(red: 0.98, green: 0.45, blue: 0.09)    // #F97316
+        case .calisthenics: return Color(red: 0.06, green: 0.73, blue: 0.51)  // #10B981
+        case .allAround: return Color(red: 0.98, green: 0.75, blue: 0.14)     // #FBBF24
+        }
+    }
+}
+
+// MARK: - User Profile Model
+@Model
+final class UserProfile {
+    var id: UUID
+    var fullName: String
+    var handle: String
+    var rawAthleteType: String
+    var bio: String
+    var avatarSymbol: String
+    var joinedDate: Date
+
+    init(
+        id: UUID = UUID(),
+        fullName: String = "Athlete",
+        handle: String = "solxce_athlete",
+        athleteType: AthleteType = .hybrid,
+        bio: String = "Dedicated to the daily standard. Heavy lifting & fast miles.",
+        avatarSymbol: String = "figure.cross-training",
+        joinedDate: Date = Date()
+    ) {
+        self.id = id
+        self.fullName = fullName
+        self.handle = handle
+        self.rawAthleteType = athleteType.rawValue
+        self.bio = bio
+        self.avatarSymbol = avatarSymbol
+        self.joinedDate = joinedDate
+    }
+
+    var athleteType: AthleteType {
+        get {
+            AthleteType(rawValue: rawAthleteType) ?? .hybrid
+        }
+        set {
+            rawAthleteType = newValue.rawValue
+        }
+    }
+}
 
 // MARK: - Exercise Set
 @Model

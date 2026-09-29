@@ -4,6 +4,7 @@ import SwiftData
 
 struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var userProfiles: [UserProfile]
     @Query private var workoutSessions: [WorkoutSession]
     @Query private var runEntries: [RunEntry]
     @Query private var macroTargets: [MacroTarget]
@@ -13,6 +14,20 @@ struct ProfileView: View {
     @State private var showingPaywall = false
     @State private var showingProgressReport = false
     @State private var showingFastingTracker = false
+    @State private var showingEditAthleteType = false
+
+    var currentProfile: UserProfile {
+        if let existing = userProfiles.first {
+            return existing
+        }
+        let fallback = UserProfile(
+            fullName: "Alex Rivera",
+            handle: "alex_solxce",
+            athleteType: .hybrid,
+            bio: "Hybrid athlete chasing heavy lifts and fast miles."
+        )
+        return fallback
+    }
 
     var totalVolumeLbs: Double {
         workoutSessions.reduce(0) { $0 + $1.totalVolumeLbs }
@@ -36,6 +51,9 @@ struct ProfileView: View {
                 VStack(spacing: AppTheme.Spacing.lg) {
                     // Profile Header & Avatar
                     profileHeader
+
+                    // Athlete Archetype Pass Card
+                    athleteArchetypeCard
 
                     // Solxce Pro Membership Card
                     proMembershipCard
@@ -73,6 +91,9 @@ struct ProfileView: View {
             .sheet(isPresented: $showingFastingTracker) {
                 FastingTrackerView()
             }
+            .sheet(isPresented: $showingEditAthleteType) {
+                EditAthleteTypeSheet(profile: currentProfile)
+            }
         }
     }
 
@@ -81,21 +102,21 @@ struct ProfileView: View {
         VStack(spacing: AppTheme.Spacing.sm) {
             ZStack {
                 Circle()
-                    .stroke(AppTheme.primary, lineWidth: 3)
+                    .stroke(currentProfile.athleteType.badgeColor, lineWidth: 3)
                     .frame(width: 88, height: 88)
 
                 Circle()
                     .fill(AppTheme.surfaceRaised)
                     .frame(width: 80, height: 80)
 
-                Image(systemName: "figure.cross-training")
-                    .font(.system(size: 34))
-                    .foregroundStyle(AppTheme.primary)
+                Image(systemName: currentProfile.avatarSymbol.isEmpty ? currentProfile.athleteType.iconName : currentProfile.avatarSymbol)
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(currentProfile.athleteType.badgeColor)
             }
 
-            VStack(spacing: 2) {
+            VStack(spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("Athlete")
+                    Text(currentProfile.fullName)
                         .font(AppTheme.largeTitleFont)
                         .foregroundStyle(AppTheme.text)
 
@@ -110,13 +131,89 @@ struct ProfileView: View {
                     }
                 }
 
-                Text("@solxce_athlete · Dedicated Lifter & Runner")
-                    .font(AppTheme.captionFont)
+                Text("@\(currentProfile.handle)")
+                    .font(AppTheme.monoFont)
                     .foregroundStyle(AppTheme.textSecondary)
+
+                Text(currentProfile.bio)
+                    .font(AppTheme.bodyFont)
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 2)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, AppTheme.Spacing.md)
+        .padding(.vertical, AppTheme.Spacing.xs)
+    }
+
+    // MARK: - Athlete Archetype Badge Card
+    private var athleteArchetypeCard: some View {
+        Button {
+            showingEditAthleteType = true
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(currentProfile.athleteType.badgeColor.opacity(0.18))
+                        .frame(width: 48, height: 48)
+
+                    Image(systemName: currentProfile.athleteType.iconName)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(currentProfile.athleteType.badgeColor)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(currentProfile.athleteType.rawValue)
+                            .font(AppTheme.headlineFont)
+                            .foregroundColor(AppTheme.text)
+
+                        Text(currentProfile.athleteType.shortTag)
+                            .font(AppTheme.eyebrowFont)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(currentProfile.athleteType.badgeColor.opacity(0.2))
+                            .foregroundColor(currentProfile.athleteType.badgeColor)
+                            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
+                    }
+
+                    Text(currentProfile.athleteType.description)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(AppTheme.textSecondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Text("Change")
+                        .font(AppTheme.eyebrowFont)
+                        .foregroundColor(AppTheme.primary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppTheme.primary)
+                }
+            }
+            .padding(AppTheme.Spacing.md)
+            .background(
+                ZStack {
+                    AppTheme.surface
+                    LinearGradient(
+                        colors: [currentProfile.athleteType.badgeColor.opacity(0.08), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                    .stroke(currentProfile.athleteType.badgeColor.opacity(0.4), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Pro Membership Card
@@ -346,6 +443,148 @@ struct ProfileView: View {
         .padding(AppTheme.Spacing.md)
         .background(AppTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+    }
+}
+
+// MARK: - Edit Athlete Type Sheet
+struct EditAthleteTypeSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Bindable var profile: UserProfile
+
+    @State private var selectedType: AthleteType = .hybrid
+    @State private var fullName: String = ""
+    @State private var handle: String = ""
+    @State private var bio: String = ""
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: AppTheme.Spacing.lg) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("SELECT ATHLETE ARCHETYPE")
+                            .font(AppTheme.eyebrowFont)
+                            .foregroundColor(AppTheme.textSecondary)
+
+                        ForEach(AthleteType.allCases) { type in
+                            Button {
+                                selectedType = type
+                            } label: {
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(type.badgeColor.opacity(0.2))
+                                            .frame(width: 44, height: 44)
+
+                                        Image(systemName: type.iconName)
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(type.badgeColor)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack {
+                                            Text(type.rawValue)
+                                                .font(AppTheme.headlineFont)
+                                                .foregroundColor(AppTheme.text)
+
+                                            Spacer()
+
+                                            if selectedType == type {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundColor(AppTheme.primary)
+                                            }
+                                        }
+
+                                        Text(type.description)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(AppTheme.textSecondary)
+                                            .multilineTextAlignment(.leading)
+                                    }
+                                }
+                                .padding(12)
+                                .background(selectedType == type ? AppTheme.surfaceRaised : AppTheme.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                                        .stroke(selectedType == type ? type.badgeColor : AppTheme.hairline, lineWidth: selectedType == type ? 1.5 : 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    // Personal details
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("PROFILE DETAILS")
+                            .font(AppTheme.eyebrowFont)
+                            .foregroundColor(AppTheme.textSecondary)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Name")
+                                .font(.system(size: 12))
+                                .foregroundColor(AppTheme.textSecondary)
+                            TextField("Name", text: $fullName)
+                                .padding(10)
+                                .background(AppTheme.surfaceRaised)
+                                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.button))
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Handle")
+                                .font(.system(size: 12))
+                                .foregroundColor(AppTheme.textSecondary)
+                            TextField("Handle", text: $handle)
+                                .padding(10)
+                                .background(AppTheme.surfaceRaised)
+                                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.button))
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Bio")
+                                .font(.system(size: 12))
+                                .foregroundColor(AppTheme.textSecondary)
+                            TextField("Bio", text: $bio)
+                                .padding(10)
+                                .background(AppTheme.surfaceRaised)
+                                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.button))
+                        }
+                    }
+                    .padding(AppTheme.Spacing.md)
+                    .background(AppTheme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                }
+                .padding(.horizontal, AppTheme.Spacing.screenMargin)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
+            }
+            .background(AppTheme.ground.ignoresSafeArea())
+            .navigationTitle("Edit Athlete Type")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(AppTheme.textSecondary)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        profile.athleteType = selectedType
+                        if !fullName.isEmpty { profile.fullName = fullName }
+                        if !handle.isEmpty { profile.handle = handle }
+                        if !bio.isEmpty { profile.bio = bio }
+                        try? modelContext.save()
+                        dismiss()
+                    }
+                    .font(AppTheme.headlineFont)
+                    .foregroundColor(AppTheme.primary)
+                }
+            }
+            .onAppear {
+                selectedType = profile.athleteType
+                fullName = profile.fullName
+                handle = profile.handle
+                bio = profile.bio
+            }
+        }
     }
 }
 

@@ -1,11 +1,13 @@
 // Views/FeedView.swift
 import SwiftUI
+import SwiftData
 
 // MARK: - Local Feed Fixture Model
 struct AthletePost: Identifiable {
     let id = UUID()
     let authorName: String
     let authorHandle: String
+    let athleteType: AthleteType
     let timeAgo: String
     let workoutTag: String
     let workoutStats: String
@@ -19,6 +21,7 @@ struct AthletePost: Identifiable {
 struct PostComment: Identifiable {
     let id = UUID()
     let author: String
+    let athleteType: AthleteType?
     let text: String
     let timeAgo: String
 }
@@ -26,15 +29,35 @@ struct PostComment: Identifiable {
 struct AthleteStory: Identifiable {
     let id = UUID()
     let name: String
+    let athleteType: AthleteType
     let hasUnseen: Bool
     let tag: String
 }
 
 struct FeedView: View {
+    @Query private var userProfiles: [UserProfile]
+
+    var currentUserProfile: UserProfile? {
+        userProfiles.first
+    }
+
+    var currentUserAthleteType: AthleteType {
+        currentUserProfile?.athleteType ?? .hybrid
+    }
+
+    var currentUserName: String {
+        currentUserProfile?.fullName ?? "You"
+    }
+
+    var currentUserHandle: String {
+        currentUserProfile?.handle ?? "solxce_athlete"
+    }
+
     @State private var posts: [AthletePost] = [
         AthletePost(
             authorName: "Marcus Vance",
             authorHandle: "marcus_lifts",
+            athleteType: .powerlifter,
             timeAgo: "2h ago",
             workoutTag: "CHEST & TRICEPS",
             workoutStats: "6 exercises · 22 sets · 18,400 lbs volume",
@@ -43,13 +66,14 @@ struct FeedView: View {
             likesCount: 142,
             isLiked: false,
             comments: [
-                PostComment(author: "elena_runs", text: "Insane bench numbers man! Clean form 🔥", timeAgo: "1h ago"),
-                PostComment(author: "coach_dave", text: "Chest drive looking sharp. Keep recovering well.", timeAgo: "45m ago")
+                PostComment(author: "elena_runs", athleteType: .runner, text: "Insane bench numbers man! Clean form 🔥", timeAgo: "1h ago"),
+                PostComment(author: "coach_dave", athleteType: .functional, text: "Chest drive looking sharp. Keep recovering well.", timeAgo: "45m ago")
             ]
         ),
         AthletePost(
             authorName: "Elena Rostova",
             authorHandle: "elena_runs",
+            athleteType: .runner,
             timeAgo: "4h ago",
             workoutTag: "TEMPO RUN",
             workoutStats: "6.20 mi · 44:18 · 7'08\" /mi pace",
@@ -58,12 +82,13 @@ struct FeedView: View {
             likesCount: 89,
             isLiked: true,
             comments: [
-                PostComment(author: "marcus_lifts", text: "That 7:08 pace is flying!", timeAgo: "3h ago")
+                PostComment(author: "marcus_lifts", athleteType: .powerlifter, text: "That 7:08 pace is flying!", timeAgo: "3h ago")
             ]
         ),
         AthletePost(
             authorName: "Kai Takahashi",
             authorHandle: "kai_athletic",
+            athleteType: .hybrid,
             timeAgo: "7h ago",
             workoutTag: "LEG DAY HYPERTROPHY",
             workoutStats: "5 exercises · 20 sets · 24,100 lbs volume",
@@ -72,18 +97,35 @@ struct FeedView: View {
             likesCount: 215,
             isLiked: false,
             comments: [
-                PostComment(author: "sarah_fit", text: "Pause squats are brutal! Respect 💪", timeAgo: "5h ago")
+                PostComment(author: "sarah_fit", athleteType: .calisthenics, text: "Pause squats are brutal! Respect 💪", timeAgo: "5h ago")
+            ]
+        ),
+        AthletePost(
+            authorName: "Maya Lin",
+            authorHandle: "maya_functional",
+            athleteType: .functional,
+            timeAgo: "9h ago",
+            workoutTag: "METCON SPEED",
+            workoutStats: "5 rounds · 100 kettlebell swings · 50 burpees",
+            caption: "Heart rate peaked at 182 bpm. Functional capacity is through the roof this training block.",
+            imageName: "flame.fill",
+            likesCount: 174,
+            isLiked: false,
+            comments: [
+                PostComment(author: "marcus_lifts", athleteType: .powerlifter, text: "Unreal work capacity Maya!", timeAgo: "8h ago")
             ]
         )
     ]
 
-    let stories: [AthleteStory] = [
-        AthleteStory(name: "You", hasUnseen: false, tag: "Add"),
-        AthleteStory(name: "Marcus", hasUnseen: true, tag: "Bench PR"),
-        AthleteStory(name: "Elena", hasUnseen: true, tag: "10K Run"),
-        AthleteStory(name: "Kai", hasUnseen: true, tag: "Legs"),
-        AthleteStory(name: "Coach Dave", hasUnseen: false, tag: "Tips")
-    ]
+    var stories: [AthleteStory] {
+        [
+            AthleteStory(name: "You", athleteType: currentUserAthleteType, hasUnseen: false, tag: "Add"),
+            AthleteStory(name: "Marcus", athleteType: .powerlifter, hasUnseen: true, tag: "Bench PR"),
+            AthleteStory(name: "Elena", athleteType: .runner, hasUnseen: true, tag: "10K Run"),
+            AthleteStory(name: "Kai", athleteType: .hybrid, hasUnseen: true, tag: "Legs"),
+            AthleteStory(name: "Maya", athleteType: .functional, hasUnseen: true, tag: "WOD")
+        ]
+    }
 
     @State private var selectedPost: AthletePost?
     @State private var showingCreatePostSheet = false
@@ -95,7 +137,7 @@ struct FeedView: View {
                     // Demo Content Disclosure Banner (Required by capability contract)
                     demoDisclosureBanner
 
-                    // Story Rail
+                    // Story Rail with Athlete Badges
                     storyRail
 
                     // Posts Stream
@@ -122,6 +164,7 @@ struct FeedView: View {
                 if let idx = posts.firstIndex(where: { $0.id == post.id }) {
                     PostDetailView(
                         post: $posts[idx],
+                        currentUserType: currentUserAthleteType,
                         onAddComment: { newComment in
                             posts[idx].comments.append(newComment)
                         }
@@ -129,7 +172,11 @@ struct FeedView: View {
                 }
             }
             .sheet(isPresented: $showingCreatePostSheet) {
-                CreatePostSheet { newPost in
+                CreatePostSheet(
+                    authorName: currentUserName,
+                    authorHandle: currentUserHandle,
+                    athleteType: currentUserAthleteType
+                ) { newPost in
                     posts.insert(newPost, at: 0)
                 }
             }
@@ -143,7 +190,7 @@ struct FeedView: View {
                 .foregroundStyle(AppTheme.primary)
                 .font(.system(size: 14))
 
-            Text("Demo content · Sample athletes and posts. Activity updates locally on this device.")
+            Text("Demo community · Athlete archetypes visible on every profile & post.")
                 .font(AppTheme.captionFont)
                 .foregroundStyle(AppTheme.textSecondary)
 
@@ -162,25 +209,36 @@ struct FeedView: View {
             HStack(spacing: AppTheme.Spacing.md) {
                 ForEach(stories) { story in
                     VStack(spacing: 4) {
-                        ZStack {
-                            if story.hasUnseen {
+                        ZStack(alignment: .bottomTrailing) {
+                            ZStack {
+                                if story.hasUnseen {
+                                    Circle()
+                                        .stroke(story.athleteType.badgeColor, lineWidth: 2.5)
+                                        .frame(width: 62, height: 62)
+                                } else {
+                                    Circle()
+                                        .stroke(AppTheme.hairline, lineWidth: 1.5)
+                                        .frame(width: 62, height: 62)
+                                }
+
                                 Circle()
-                                    .stroke(AppTheme.primary, lineWidth: 2.5)
-                                    .frame(width: 62, height: 62)
-                            } else {
-                                Circle()
-                                    .stroke(AppTheme.hairline, lineWidth: 1.5)
-                                    .frame(width: 62, height: 62)
+                                    .fill(AppTheme.surfaceRaised)
+                                    .frame(width: 54, height: 54)
+
+                                Image(systemName: story.athleteType.iconName)
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundStyle(story.athleteType.badgeColor)
                             }
 
+                            // Micro athlete badge dot
                             Circle()
-                                .fill(AppTheme.surfaceRaised)
-                                .frame(width: 54, height: 54)
-
-                            Text(story.name.prefix(1))
-                                .font(AppTheme.headlineFont)
-                                .bold()
-                                .foregroundStyle(AppTheme.primary)
+                                .fill(story.athleteType.badgeColor)
+                                .frame(width: 14, height: 14)
+                                .overlay(
+                                    Circle()
+                                        .stroke(AppTheme.ground, lineWidth: 2)
+                                )
+                                .offset(x: -2, y: -2)
                         }
 
                         Text(story.name)
@@ -199,22 +257,42 @@ struct FeedView: View {
     // MARK: - Post Card
     private func postCard(post: AthletePost, index: Int) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Post Header
+            // Post Header with Athlete Archetype Badge
             HStack(spacing: AppTheme.Spacing.sm) {
-                Circle()
-                    .fill(AppTheme.surfaceRaised)
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Text(post.authorName.prefix(1))
-                            .font(AppTheme.subheadlineFont)
-                            .bold()
-                            .foregroundStyle(AppTheme.primary)
-                    )
+                ZStack {
+                    Circle()
+                        .stroke(post.athleteType.badgeColor, lineWidth: 2)
+                        .frame(width: 38, height: 38)
+
+                    Circle()
+                        .fill(AppTheme.surfaceRaised)
+                        .frame(width: 34, height: 34)
+
+                    Image(systemName: post.athleteType.iconName)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(post.athleteType.badgeColor)
+                }
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(post.authorName)
-                        .font(AppTheme.headlineFont)
-                        .foregroundStyle(AppTheme.text)
+                    HStack(spacing: 6) {
+                        Text(post.authorName)
+                            .font(AppTheme.headlineFont)
+                            .foregroundStyle(AppTheme.text)
+
+                        // Visible Athlete Archetype Badge
+                        HStack(spacing: 3) {
+                            Image(systemName: post.athleteType.iconName)
+                                .font(.system(size: 9, weight: .bold))
+                            Text(post.athleteType.shortTag)
+                                .font(.system(size: 9, weight: .black))
+                        }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(post.athleteType.badgeColor.opacity(0.18))
+                        .foregroundColor(post.athleteType.badgeColor)
+                        .clipShape(Capsule())
+                    }
+
                     Text("@\(post.authorHandle) · \(post.timeAgo)")
                         .font(AppTheme.captionFont)
                         .foregroundStyle(AppTheme.textSecondary)
@@ -241,7 +319,7 @@ struct FeedView: View {
                 VStack(spacing: AppTheme.Spacing.sm) {
                     Image(systemName: post.imageName)
                         .font(.system(size: 40))
-                        .foregroundStyle(AppTheme.primary)
+                        .foregroundStyle(post.athleteType.badgeColor)
 
                     Text(post.workoutStats)
                         .font(AppTheme.subheadlineFont)
@@ -325,6 +403,7 @@ struct FeedView: View {
 struct PostDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var post: AthletePost
+    var currentUserType: AthleteType
     var onAddComment: (PostComment) -> Void
 
     @State private var commentText: String = ""
@@ -334,22 +413,37 @@ struct PostDetailView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: AppTheme.Spacing.md) {
-                        // Author header
+                        // Author header with Athlete Badge
                         HStack(spacing: AppTheme.Spacing.sm) {
-                            Circle()
-                                .fill(AppTheme.surfaceRaised)
-                                .frame(width: 40, height: 40)
-                                .overlay(
-                                    Text(post.authorName.prefix(1))
-                                        .font(AppTheme.headlineFont)
-                                        .bold()
-                                        .foregroundStyle(AppTheme.primary)
-                                )
+                            ZStack {
+                                Circle()
+                                    .stroke(post.athleteType.badgeColor, lineWidth: 2)
+                                    .frame(width: 42, height: 42)
+
+                                Circle()
+                                    .fill(AppTheme.surfaceRaised)
+                                    .frame(width: 38, height: 38)
+
+                                Image(systemName: post.athleteType.iconName)
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundStyle(post.athleteType.badgeColor)
+                            }
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(post.authorName)
-                                    .font(AppTheme.headlineFont)
-                                    .foregroundStyle(AppTheme.text)
+                                HStack(spacing: 6) {
+                                    Text(post.authorName)
+                                        .font(AppTheme.headlineFont)
+                                        .foregroundStyle(AppTheme.text)
+
+                                    Text(post.athleteType.shortTag)
+                                        .font(.system(size: 9, weight: .black))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(post.athleteType.badgeColor.opacity(0.18))
+                                        .foregroundColor(post.athleteType.badgeColor)
+                                        .clipShape(Capsule())
+                                }
+
                                 Text("@\(post.authorHandle) · \(post.timeAgo)")
                                     .font(AppTheme.captionFont)
                                     .foregroundStyle(AppTheme.textSecondary)
@@ -392,22 +486,40 @@ struct PostDetailView: View {
                         } else {
                             ForEach(post.comments) { comment in
                                 HStack(alignment: .top, spacing: AppTheme.Spacing.sm) {
-                                    Circle()
-                                        .fill(AppTheme.surfaceRaised)
-                                        .frame(width: 28, height: 28)
-                                        .overlay(
+                                    ZStack {
+                                        Circle()
+                                            .fill(AppTheme.surfaceRaised)
+                                            .frame(width: 30, height: 30)
+
+                                        if let type = comment.athleteType {
+                                            Image(systemName: type.iconName)
+                                                .font(.system(size: 13, weight: .bold))
+                                                .foregroundStyle(type.badgeColor)
+                                        } else {
                                             Text(comment.author.prefix(1).uppercased())
                                                 .font(AppTheme.captionFont)
                                                 .bold()
                                                 .foregroundStyle(AppTheme.primary)
-                                        )
+                                        }
+                                    }
 
                                     VStack(alignment: .leading, spacing: 2) {
-                                        HStack {
+                                        HStack(spacing: 6) {
                                             Text(comment.author)
                                                 .font(AppTheme.subheadlineFont)
                                                 .bold()
                                                 .foregroundStyle(AppTheme.text)
+
+                                            if let type = comment.athleteType {
+                                                Text(type.shortTag)
+                                                    .font(.system(size: 8, weight: .heavy))
+                                                    .padding(.horizontal, 4)
+                                                    .padding(.vertical, 1)
+                                                    .background(type.badgeColor.opacity(0.18))
+                                                    .foregroundColor(type.badgeColor)
+                                                    .clipShape(Capsule())
+                                            }
+
                                             Spacer()
                                             Text(comment.timeAgo)
                                                 .font(AppTheme.captionFont)
@@ -436,7 +548,7 @@ struct PostDetailView: View {
 
                     Button(action: {
                         guard !commentText.isEmpty else { return }
-                        let comment = PostComment(author: "you", text: commentText, timeAgo: "Just now")
+                        let comment = PostComment(author: "you", athleteType: currentUserType, text: commentText, timeAgo: "Just now")
                         onAddComment(comment)
                         commentText = ""
                     }) {
@@ -469,6 +581,9 @@ struct PostDetailView: View {
 // MARK: - Create Post Sheet
 struct CreatePostSheet: View {
     @Environment(\.dismiss) private var dismiss
+    var authorName: String
+    var authorHandle: String
+    var athleteType: AthleteType
     var onPost: (AthletePost) -> Void
 
     @State private var caption: String = ""
@@ -478,6 +593,23 @@ struct CreatePostSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Athlete Tag") {
+                    HStack(spacing: 10) {
+                        Image(systemName: athleteType.iconName)
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(athleteType.badgeColor)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(athleteType.rawValue)
+                                .font(AppTheme.headlineFont)
+                            Text("Will be attached to your post in the community feed")
+                                .font(.system(size: 11))
+                                .foregroundColor(AppTheme.textSecondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
                 Section("Workout Overview") {
                     TextField("Focus (e.g. Back & Biceps)", text: $workoutType)
                     TextField("Summary (e.g. 5 exercises, 18 sets)", text: $workoutSummary)
@@ -500,13 +632,14 @@ struct CreatePostSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Share") {
                         let post = AthletePost(
-                            authorName: "You",
-                            authorHandle: "athlete_you",
+                            authorName: authorName,
+                            authorHandle: authorHandle,
+                            athleteType: athleteType,
                             timeAgo: "Just now",
                             workoutTag: workoutType.uppercased(),
                             workoutStats: workoutSummary,
                             caption: caption.isEmpty ? "Pushed through a great session today." : caption,
-                            imageName: "dumbbell.fill",
+                            imageName: athleteType.iconName,
                             likesCount: 1,
                             isLiked: true,
                             comments: []
