@@ -28,49 +28,36 @@ enum FeedTokens {
         })
     }
 
-    /// The feed, profile, and sheet ground — paper white flipping to true
-    /// black.
-    static let ground = adaptive(.white, .black)
+    /// The feed, profile, and sheet ground — athletic dark #0A0A0A
+    static let ground = Color(red: 0.039, green: 0.039, blue: 0.039)
     /// Sheet and menu surface raised above the ground.
-    static let surface = adaptive(
-        .white, UIColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1))
+    static let surface = Color(red: 0.086, green: 0.086, blue: 0.086)
     /// Quiet fills: search capsules, secondary buttons, composer fields
-    /// (observed ~`#EFEFEF` light).
-    static let field = adaptive(
-        UIColor(red: 0.937, green: 0.937, blue: 0.937, alpha: 1),
-        UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1))
-    /// Pale-blue wash behind unseen activity rows (observed ~`#EAF2FF`).
-    static let unseenWash = adaptive(
-        UIColor(red: 0.918, green: 0.949, blue: 1.0, alpha: 1),
-        UIColor(red: 0.08, green: 0.12, blue: 0.20, alpha: 1))
+    static let field = Color(red: 0.149, green: 0.149, blue: 0.149)
+    /// Pale-blue wash behind unseen activity rows
+    static let unseenWash = Color(red: 0.12, green: 0.15, blue: 0.18)
 
     // MARK: Ink
 
-    /// Usernames, copy, titles — near-black flipping to white.
-    static let ink = adaptive(
-        UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1), .white)
-    /// Timestamps, captions' meta, locations, secondary lines (observed
-    /// ~`#737373`).
-    static let inkSecondary = adaptive(
-        UIColor(red: 0.451, green: 0.451, blue: 0.451, alpha: 1),
-        UIColor(red: 0.659, green: 0.659, blue: 0.659, alpha: 1))
-    /// Content sitting on the solid accent — white in both schemes.
-    static let inkOnAccent = Color.white
+    /// Usernames, copy, titles
+    static let ink = Color(red: 0.96, green: 0.96, blue: 0.96)
+    /// Timestamps, captions' meta, locations, secondary lines
+    static let inkSecondary = Color(red: 0.65, green: 0.65, blue: 0.65)
+    /// Content sitting on the solid accent — true black for volt
+    static let inkOnAccent = Color.black
     /// Hairline separators — ink at 12%.
-    static let hairline = ink.opacity(0.12)
+    static let hairline = Color.white.opacity(0.12)
 
     // MARK: Accent & semantics
 
-    /// The committing blue-violet — Follow, Follow back, Send, Next
-    /// (observed estimate ~`#4150F7`).
-    static let accent = Color(red: 0.255, green: 0.314, blue: 0.969)
-    /// The verified seal and link-blue (observed estimate ~`#0095F6`).
-    static let verified = Color(red: 0.0, green: 0.584, blue: 0.965)
-    /// The like-heart red, also the notification badge (observed estimate
-    /// ~`#FF3040`).
-    static let heart = Color(red: 1.0, green: 0.188, blue: 0.251)
-    /// Destructive glyphs and Report rows (observed estimate ~`#ED4956`).
-    static let destructive = Color(red: 0.929, green: 0.286, blue: 0.337)
+    /// The committing volt accent
+    static let accent = Color(red: 0.831, green: 1.0, blue: 0.247)
+    /// The verified seal
+    static let verified = Color(red: 0.831, green: 1.0, blue: 0.247)
+    /// The like-heart red #FF3B5C
+    static let heart = Color(red: 1.0, green: 0.231, blue: 0.361)
+    /// Destructive glyphs
+    static let destructive = Color(red: 1.0, green: 0.231, blue: 0.361)
 
     // MARK: Story ring
 
