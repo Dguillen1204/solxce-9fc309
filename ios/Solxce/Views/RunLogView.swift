@@ -378,7 +378,7 @@ struct RunLogView: View {
                     }) {
                         HStack {
                             Image(systemName: "play.fill")
-                            Text("START GPS RUN")
+                            Text("START RUN")
                         }
                         .font(AppTheme.headlineFont)
                         .foregroundStyle(.black)
