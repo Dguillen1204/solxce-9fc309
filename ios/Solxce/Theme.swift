@@ -60,28 +60,28 @@ public enum AppTheme {
         dark: UIColor(red: 1.0, green: 0.231, blue: 0.361, alpha: 1.0)
     )
 
-    /// Base canvas background: Paper White/Soft Gray (#F7F7F8) in light mode, Charcoal Black (#0A0A0A) in dark mode
+    /// Base canvas background: Paper White/Soft Gray (#F7F7F8) in light mode, Pure True Black (#000000) in dark mode
     public static let ground = dynamicColor(
         light: UIColor(red: 0.965, green: 0.965, blue: 0.975, alpha: 1.0),
-        dark: UIColor(red: 0.039, green: 0.039, blue: 0.039, alpha: 1.0)
+        dark: UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
     )
 
-    /// Card surfaces: Crisp White (#FFFFFF) in light mode, Dark Slate (#161616) in dark mode
+    /// Card surfaces: Crisp White (#FFFFFF) in light mode, Deep Obsidian (#111111 / #141416) in dark mode
     public static let surface = dynamicColor(
         light: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0),
-        dark: UIColor(red: 0.086, green: 0.086, blue: 0.086, alpha: 1.0)
+        dark: UIColor(red: 0.07, green: 0.07, blue: 0.07, alpha: 1.0)
     )
 
-    /// Elevated surfaces: Light Gray (#F0F0F3) in light mode, Slate (#202020) in dark mode
+    /// Elevated surfaces: Light Gray (#F0F0F3) in light mode, Slate Charcoal (#1A1A1A) in dark mode
     public static let surfaceRaised = dynamicColor(
         light: UIColor(red: 0.93, green: 0.93, blue: 0.95, alpha: 1.0),
-        dark: UIColor(red: 0.125, green: 0.125, blue: 0.125, alpha: 1.0)
+        dark: UIColor(red: 0.11, green: 0.11, blue: 0.11, alpha: 1.0)
     )
 
     /// Input fields & subtle chips
     public static let field = dynamicColor(
         light: UIColor(red: 0.90, green: 0.90, blue: 0.93, alpha: 1.0),
-        dark: UIColor(red: 0.149, green: 0.149, blue: 0.149, alpha: 1.0)
+        dark: UIColor(red: 0.14, green: 0.14, blue: 0.14, alpha: 1.0)
     )
 
     /// Hairline borders
