@@ -57,6 +57,10 @@ struct RunLogView: View {
         return String(format: "%d'%02d\" /mi", mins, max(0, min(59, secs)))
     }
 
+    private var finishAlertMessage: String {
+        String(format: "Recorded %.2f miles in %@ (Avg Pace: %@).", tracker.totalDistanceMiles, tracker.formattedElapsedTime, tracker.averagePaceFormatted)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -142,7 +146,7 @@ struct RunLogView: View {
                     tracker.resumeRun()
                 }
             } message: {
-                Text(String(format: "Recorded %.2f miles in %@ (Avg Pace: %@).", tracker.totalDistanceMiles, tracker.formattedElapsedTime, tracker.averagePaceFormatted))
+                Text(finishAlertMessage)
             }
             .sheet(item: $selectedHistoricalRun) { run in
                 RunRouteDetailSheet(run: run)
