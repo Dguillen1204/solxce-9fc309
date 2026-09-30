@@ -8,7 +8,6 @@ struct SettingsView: View {
     @Query private var userProfiles: [UserProfile]
     @ObservedObject private var subManager = SubscriptionManager.shared
     @AppStorage("solxce_app_appearance") private var appAppearanceRaw: String = AppAppearance.system.rawValue
-    @AppStorage("solxce_app_palette") private var appPaletteRaw: String = AppColorPalette.crimson.rawValue
 
     // Account Credentials State
     @State private var fullName: String = ""
@@ -56,9 +55,6 @@ struct SettingsView: View {
 
                     // MARK: - Appearance (Dark / Light / System)
                     appearanceSection
-
-                    // MARK: - Signature Color Theme
-                    paletteSection
 
                     // MARK: - Account Details (Username, Name, Email, Bio)
                     accountDetailsSection
@@ -278,52 +274,6 @@ struct SettingsView: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: AppTheme.Radii.card)
                                 .stroke(isSelected ? AppTheme.primary : AppTheme.hairline, lineWidth: isSelected ? 1.5 : 1)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    // MARK: - Color Palette Accent Section
-    private var paletteSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(title: "Color Theme", subtitle: "Select your signature telemetry accent hue", icon: "paintpalette.fill")
-
-            HStack(spacing: 10) {
-                let palettes: [AppColorPalette] = AppColorPalette.allCases
-                ForEach(palettes) { palette in
-                    let isSelected = (AppColorPalette(rawValue: appPaletteRaw) ?? .crimson) == palette
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                            appPaletteRaw = palette.rawValue
-                        }
-                    } label: {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(palette.accentColor)
-                                    .frame(width: 38, height: 38)
-
-                                if isSelected {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundStyle(palette == .volt ? Color.black : Color.white)
-                                }
-                            }
-
-                            Text(palette.title)
-                                .font(AppTheme.captionFont.weight(isSelected ? .bold : .medium))
-                                .foregroundStyle(isSelected ? AppTheme.text : AppTheme.textSecondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(isSelected ? AppTheme.surfaceRaised : AppTheme.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppTheme.Radii.card)
-                                .stroke(isSelected ? palette.accentColor : AppTheme.hairline, lineWidth: isSelected ? 1.5 : 1)
                         )
                     }
                     .buttonStyle(.plain)
