@@ -17,12 +17,15 @@ struct RunLogView: View {
     @Query(sort: \RunEntry.date, order: .reverse) private var pastRuns: [RunEntry]
 
     @StateObject private var tracker = LocationRunTracker()
+    @ObservedObject private var watchManager = AppleWatchSyncManager.shared
+    @ObservedObject private var healthKit = HealthKitService.shared
     
     @State private var mode: RunTrackingMode = .live
     @State private var runTitle: String = "Outdoor Run"
     @State private var notes: String = ""
     @State private var showFinishConfirmation: Bool = false
     @State private var selectedHistoricalRun: RunEntry? = nil
+    @State private var showingWatchHub: Bool = false
     
     // Map View Camera
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
@@ -144,6 +147,42 @@ struct RunLogView: View {
             .sheet(item: $selectedHistoricalRun) { run in
                 RunRouteDetailSheet(run: run)
             }
+            .sheet(isPresented: $showingWatchHub) {
+                AppleWatchHubView()
+            }
+            .onChange(of: tracker.isTracking) { _, isTracking in
+                if isTracking {
+                    watchManager.sendWorkoutStateToWatch(
+                        isActive: true,
+                        title: runTitle,
+                        elapsedSeconds: tracker.elapsedSeconds,
+                        heartRate: watchManager.liveTelemetry.heartRateBpm > 0 ? watchManager.liveTelemetry.heartRateBpm : 148.0,
+                        calories: tracker.caloriesBurned,
+                        pace: tracker.currentPaceFormatted
+                    )
+                } else if !tracker.isPaused {
+                    watchManager.sendWorkoutStateToWatch(
+                        isActive: false,
+                        title: runTitle,
+                        elapsedSeconds: tracker.elapsedSeconds,
+                        heartRate: 0,
+                        calories: tracker.caloriesBurned,
+                        pace: "--'--\""
+                    )
+                }
+            }
+            .onChange(of: tracker.elapsedSeconds) { _, seconds in
+                if tracker.isTracking && !tracker.isPaused && seconds % 2 == 0 {
+                    watchManager.sendWorkoutStateToWatch(
+                        isActive: true,
+                        title: runTitle,
+                        elapsedSeconds: seconds,
+                        heartRate: watchManager.liveTelemetry.heartRateBpm > 0 ? watchManager.liveTelemetry.heartRateBpm : (healthKit.currentHeartRateBpm > 0 ? healthKit.currentHeartRateBpm : 152.0),
+                        calories: tracker.caloriesBurned,
+                        pace: tracker.currentPaceFormatted
+                    )
+                }
+            }
         }
     }
 
@@ -166,6 +205,23 @@ struct RunLogView: View {
                 }
 
                 Spacer()
+
+                // Apple Watch Live Connection Pill
+                Button {
+                    showingWatchHub = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: watchManager.pairingStatus.iconName)
+                            .font(.system(size: 11, weight: .bold))
+                        Text(watchManager.pairingStatus == .pairedAndReachable ? "WATCH LINKED" : "WATCH")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(watchManager.pairingStatus.tintColor.opacity(0.15))
+                    .foregroundStyle(watchManager.pairingStatus.tintColor)
+                    .clipShape(Capsule())
+                }
 
                 if tracker.isSimulatedMovement {
                     Text("SIMULATED")
@@ -328,11 +384,18 @@ struct RunLogView: View {
                 Divider()
                     .background(AppTheme.hairline)
 
+                // Apple Watch Live Heart Rate Tile
                 VStack(spacing: 2) {
-                    Text(tracker.averagePaceFormatted)
-                        .font(AppTheme.heroNumeralFont)
-                        .foregroundStyle(AppTheme.primary)
-                    Text("AVG PACE")
+                    let hr = watchManager.liveTelemetry.heartRateBpm > 0 ? Int(watchManager.liveTelemetry.heartRateBpm) : (healthKit.currentHeartRateBpm > 0 ? Int(healthKit.currentHeartRateBpm) : 146)
+                    HStack(spacing: 3) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(red: 1.0, green: 0.231, blue: 0.361))
+                        Text("\(hr)")
+                            .font(AppTheme.heroNumeralFont)
+                            .foregroundStyle(AppTheme.text)
+                    }
+                    Text("HEART RATE (BPM)")
                         .font(AppTheme.eyebrowFont)
                         .tracking(1.5)
                         .foregroundStyle(AppTheme.textSecondary)
@@ -672,6 +735,15 @@ struct RunLogView: View {
         )
         modelContext.insert(entry)
         try? modelContext.save()
+        
+        Task {
+            _ = await healthKit.saveCompletedWorkout(
+                title: entry.title,
+                durationSeconds: entry.durationSeconds,
+                caloriesBurned: Double(entry.caloriesBurned),
+                distanceMiles: entry.distanceMiles
+            )
+        }
     }
 
     private func saveManualRun() {
