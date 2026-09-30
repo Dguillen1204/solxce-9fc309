@@ -213,7 +213,7 @@ struct TodayView: View {
                 .padding(.trailing, 4)
             }
 
-            Button(action: { selectedTab = 4 }) {
+            Button(action: { selectedTab = 5 }) {
                 if let profile = userProfiles.first {
                     AthleteAvatarView(
                         imageData: profile.profileImageData,
@@ -237,7 +237,7 @@ struct TodayView: View {
     }
 
     private var todaySplitCard: some View {
-        Button(action: { selectedTab = 3 }) {
+        Button(action: { selectedTab = 4 }) {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
                 HStack {
                     HStack(spacing: 6) {

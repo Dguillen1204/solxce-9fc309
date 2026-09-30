@@ -56,23 +56,29 @@ struct ContentView: View {
                     }
                     .tag(1)
 
+                FeedView()
+                    .tabItem {
+                        Label("Feed", systemImage: "play.square.stack.fill")
+                    }
+                    .tag(2)
+
                 FuelTabView()
                     .tabItem {
                         Label("Fuel", systemImage: "leaf.fill")
                     }
-                    .tag(2)
+                    .tag(3)
 
                 PlannerView()
                     .tabItem {
                         Label("Schedule", systemImage: "calendar")
                     }
-                    .tag(3)
+                    .tag(4)
 
                 ProfileView()
                     .tabItem {
                         Label("Athlete", systemImage: "person.fill")
                     }
-                    .tag(4)
+                    .tag(5)
             }
             .tint(AppTheme.primary)
 
