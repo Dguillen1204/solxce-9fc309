@@ -35,8 +35,8 @@ public enum AppAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// Forge Crimson & Carbon Design System tokens for Solxce (Whoop / Apex Telemetry aesthetic)
-/// Pitch-black obsidian canvas, crisp specular white primary, intense forge crimson accents (#EF4444), and deep charcoal surfaces.
+/// Apex Volt & Neon Lime Design System tokens for Solxce (Whoop / Apex Telemetry aesthetic)
+/// Pitch-black obsidian canvas, crisp specular white primary, electric kinetic volt accents (#CCFF00 / #A3E635), and deep charcoal surfaces.
 public enum AppTheme {
     // MARK: - Adaptive Color Helper
     public static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
@@ -45,23 +45,25 @@ public enum AppTheme {
         })
     }
 
-    // MARK: - Core Colors (Forge Crimson & Carbon)
+    // MARK: - Core Colors (Apex Volt & Neon Lime)
     /// Primary Specular White (#FFFFFF)
     public static let primary = dynamicColor(
         light: UIColor(red: 0.05, green: 0.05, blue: 0.06, alpha: 1.0),
         dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // #FFFFFF
     )
 
-    /// Forge Crimson accent (#EF4444)
+    /// Apex Volt accent (#CCFF00 / Electric Volt)
     public static let accent = dynamicColor(
-        light: UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1.0),
-        dark: UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) // #EF4444
+        light: UIColor(red: 0.52, green: 0.72, blue: 0.0, alpha: 1.0), // Deep volt for light mode
+        dark: UIColor(red: 0.800, green: 1.000, blue: 0.000, alpha: 1.0) // #CCFF00 Hyper Volt
     )
 
-    /// Intense Crimson highlight token
-    public static let crimson = Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444
+    /// Electric Volt & Platinum highlight tokens
+    public static let volt = Color(red: 0.800, green: 1.000, blue: 0.000) // #CCFF00
+    public static let neonLime = Color(red: 0.639, green: 0.902, blue: 0.208) // #A3E635
+    public static let crimson = Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444 (for zone alerts)
     public static let platinum = Color(red: 0.886, green: 0.910, blue: 0.941) // #E2E8F0
-    public static let primaryVolt = crimson // Compatibility alias mapping to crimson highlight
+    public static let primaryVolt = volt // Compatibility alias
 
     /// Base canvas background: True Black (#000000)
     public static let ground = dynamicColor(
@@ -87,7 +89,7 @@ public enum AppTheme {
         dark: UIColor(red: 0.133, green: 0.133, blue: 0.141, alpha: 1.0)
     )
 
-    /// Hairline borders (Specular platinum / crimson shimmer)
+    /// Hairline borders (Specular platinum / volt shimmer)
     public static let hairline = dynamicColor(
         light: UIColor(white: 0.0, alpha: 0.08),
         dark: UIColor(white: 1.0, alpha: 0.12)
@@ -117,10 +119,10 @@ public enum AppTheme {
         dark: UIColor.black
     )
 
-    // MARK: - Telemetry & Macro Semantics (Forge Crimson / Telemetry Ramp)
+    // MARK: - Telemetry & Macro Semantics (Apex Volt / Telemetry Ramp)
     public static let caloriesColor = dynamicColor(
-        light: UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1.0),
-        dark: UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) // Forge Crimson
+        light: UIColor(red: 0.52, green: 0.72, blue: 0.0, alpha: 1.0),
+        dark: UIColor(red: 0.800, green: 1.000, blue: 0.000, alpha: 1.0) // Hyper Volt #CCFF00
     )
     public static let proteinColor = dynamicColor(
         light: UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0),
@@ -128,7 +130,7 @@ public enum AppTheme {
     )
     public static let carbsColor = dynamicColor(
         light: UIColor(red: 0.35, green: 0.37, blue: 0.42, alpha: 1.0),
-        dark: UIColor(red: 0.886, green: 0.910, blue: 0.941, alpha: 1.0) // Platinum Silver
+        dark: UIColor(red: 0.639, green: 0.902, blue: 0.208, alpha: 1.0) // Neon Lime #A3E635
     )
     public static let fatColor = dynamicColor(
         light: UIColor(red: 0.55, green: 0.58, blue: 0.65, alpha: 1.0),
