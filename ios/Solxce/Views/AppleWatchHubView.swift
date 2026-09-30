@@ -106,7 +106,7 @@ struct AppleWatchHubView: View {
             }
             
             Divider()
-                .background(AppTheme.divider)
+                .background(AppTheme.hairline)
             
             // Action Buttons
             HStack(spacing: AppTheme.Spacing.sm) {
@@ -312,7 +312,7 @@ struct AppleWatchHubView: View {
                     watchManager.savePreferences()
                 }
                 
-                Divider().background(AppTheme.divider)
+                Divider().background(AppTheme.hairline)
                 
                 Toggle(isOn: $watchManager.streamHeartRateToWatch) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -330,7 +330,7 @@ struct AppleWatchHubView: View {
                     watchManager.savePreferences()
                 }
                 
-                Divider().background(AppTheme.divider)
+                Divider().background(AppTheme.hairline)
                 
                 Toggle(isOn: $watchManager.hapticAlertsOnTargetPace) {
                     VStack(alignment: .leading, spacing: 2) {
