@@ -13,6 +13,7 @@ struct TodayView: View {
 
     @ObservedObject private var fasting = FastingManager.shared
     @ObservedObject private var subManager = SubscriptionManager.shared
+    @ObservedObject private var watchManager = AppleWatchSyncManager.shared
 
     @State private var showingWorkoutLogger = false
     @State private var showingRunLogger = false
@@ -21,6 +22,7 @@ struct TodayView: View {
     @State private var showingCameraScanner = false
     @State private var showingProgressReport = false
     @State private var showingPaywall = false
+    @State private var showingWatchHub = false
 
     @Binding var selectedTab: Int
 
@@ -44,6 +46,9 @@ struct TodayView: View {
 
                     // Scheduled Split Hero Card
                     todaySplitCard
+                    
+                    // Apple Watch Sync Bar / Hub Button
+                    appleWatchGlanceCard
 
                     // Intermittent Fasting Live Glance Card
                     fastingGlanceCard
@@ -90,7 +95,76 @@ struct TodayView: View {
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
+            .sheet(isPresented: $showingWatchHub) {
+                AppleWatchHubView()
+            }
         }
+    }
+
+    // MARK: - Apple Watch Glance Card
+    private var appleWatchGlanceCard: some View {
+        Button {
+            showingWatchHub = true
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(watchManager.pairingStatus.tintColor.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: watchManager.pairingStatus.iconName)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(watchManager.pairingStatus.tintColor)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text("Apple Watch Sync")
+                            .font(AppTheme.subheadlineFont.weight(.bold))
+                            .foregroundStyle(AppTheme.text)
+                        
+                        Circle()
+                            .fill(watchManager.pairingStatus.tintColor)
+                            .frame(width: 6, height: 6)
+                    }
+
+                    Text(watchManager.pairingStatus == .pairedAndReachable ? "Connected · Real-time Heart Rate Stream" : "Tap to connect & configure Watch companion")
+                        .font(AppTheme.captionFont)
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    if watchManager.liveTelemetry.heartRateBpm > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(red: 1.0, green: 0.231, blue: 0.361))
+                            Text("\(Int(watchManager.liveTelemetry.heartRateBpm)) BPM")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(AppTheme.text)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(AppTheme.surfaceRaised)
+                        .clipShape(Capsule())
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppTheme.textMuted)
+                }
+            }
+            .padding(AppTheme.Spacing.md)
+            .background(AppTheme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                    .stroke(watchManager.pairingStatus.tintColor.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Subviews
