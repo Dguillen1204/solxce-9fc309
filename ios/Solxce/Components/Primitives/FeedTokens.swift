@@ -28,25 +28,46 @@ enum FeedTokens {
         })
     }
 
-    /// The feed, profile, and sheet ground — athletic dark #0A0A0A
-    static let ground = Color(red: 0.039, green: 0.039, blue: 0.039)
+    /// The feed, profile, and sheet ground
+    static let ground = adaptive(
+        UIColor(red: 0.965, green: 0.965, blue: 0.975, alpha: 1.0),
+        UIColor(red: 0.039, green: 0.039, blue: 0.039, alpha: 1.0)
+    )
     /// Sheet and menu surface raised above the ground.
-    static let surface = Color(red: 0.086, green: 0.086, blue: 0.086)
+    static let surface = adaptive(
+        UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0),
+        UIColor(red: 0.086, green: 0.086, blue: 0.086, alpha: 1.0)
+    )
     /// Quiet fills: search capsules, secondary buttons, composer fields
-    static let field = Color(red: 0.149, green: 0.149, blue: 0.149)
+    static let field = adaptive(
+        UIColor(red: 0.90, green: 0.90, blue: 0.93, alpha: 1.0),
+        UIColor(red: 0.149, green: 0.149, blue: 0.149, alpha: 1.0)
+    )
     /// Pale-blue wash behind unseen activity rows
-    static let unseenWash = Color(red: 0.12, green: 0.15, blue: 0.18)
+    static let unseenWash = adaptive(
+        UIColor(red: 0.90, green: 0.94, blue: 1.0, alpha: 1.0),
+        UIColor(red: 0.12, green: 0.15, blue: 0.18, alpha: 1.0)
+    )
 
     // MARK: Ink
 
     /// Usernames, copy, titles
-    static let ink = Color(red: 0.96, green: 0.96, blue: 0.96)
+    static let ink = adaptive(
+        UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1.0),
+        UIColor(red: 0.96, green: 0.96, blue: 0.96, alpha: 1.0)
+    )
     /// Timestamps, captions' meta, locations, secondary lines
-    static let inkSecondary = Color(red: 0.65, green: 0.65, blue: 0.65)
-    /// Content sitting on the solid accent — true black for volt
+    static let inkSecondary = adaptive(
+        UIColor(red: 0.42, green: 0.42, blue: 0.48, alpha: 1.0),
+        UIColor(red: 0.65, green: 0.65, blue: 0.65, alpha: 1.0)
+    )
+    /// Content sitting on the solid accent
     static let inkOnAccent = Color.black
     /// Hairline separators — ink at 12%.
-    static let hairline = Color.white.opacity(0.12)
+    static let hairline = adaptive(
+        UIColor(white: 0.0, alpha: 0.08),
+        UIColor(white: 1.0, alpha: 0.12)
+    )
 
     // MARK: Accent & semantics
 

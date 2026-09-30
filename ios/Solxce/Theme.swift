@@ -1,61 +1,169 @@
 // Theme.swift
 import SwiftUI
+import UIKit
+
+/// Appearance selection setting persisted in AppStorage
+public enum AppAppearance: String, CaseIterable, Identifiable {
+    case system = "system"
+    case dark = "dark"
+    case light = "light"
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .system: return "System"
+        case .dark: return "Dark"
+        case .light: return "Light"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .system: return "circle.lefthalf.filled"
+        case .dark: return "moon.stars.fill"
+        case .light: return "sun.max.fill"
+        }
+    }
+
+    public var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .dark: return .dark
+        case .light: return .light
+        }
+    }
+}
 
 /// Athletic Volt Design System tokens for Solxce
-/// Selected palette: Primary #D4FF3F (Volt), Accent #FF3B5C (Crimson), Background #0A0A0A (Dark Ground)
-/// Surface #161616, Text #F5F5F5
-enum AppTheme {
-    // MARK: - Colors
-    static let primary = Color(red: 0.831, green: 1.0, blue: 0.247) // #D4FF3F Volt
-    static let accent = Color(red: 1.0, green: 0.231, blue: 0.361)  // #FF3B5C Crimson
-    static let ground = Color(red: 0.039, green: 0.039, blue: 0.039) // #0A0A0A Dark Ground
-    static let surface = Color(red: 0.086, green: 0.086, blue: 0.086) // #161616 Card Surface
-    static let surfaceRaised = Color(red: 0.125, green: 0.125, blue: 0.125) // #202020
-    static let field = Color(red: 0.149, green: 0.149, blue: 0.149) // #262626 Input Fields
-    static let hairline = Color.white.opacity(0.10)
-    static let text = Color(red: 0.96, green: 0.96, blue: 0.96) // #F5F5F5
-    static let textSecondary = Color(red: 0.65, green: 0.65, blue: 0.65)
-    static let textMuted = Color(red: 0.45, green: 0.45, blue: 0.45)
-    static let onPrimary = Color.black // High contrast on volt
+/// Adaptive tokens support both Dark and Light modes while preserving high-energy Volt accents and crisp readability.
+public enum AppTheme {
+    // MARK: - Adaptive Color Helper
+    public static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark ? dark : light
+        })
+    }
+
+    // MARK: - Core Colors
+    /// High-energy Volt accent: slightly deeper in light mode (#1B9E00 or #A3D900 / #0E7C00) for contrast, bright Volt (#D4FF3F) in dark mode
+    public static let primary = dynamicColor(
+        light: UIColor(red: 0.16, green: 0.65, blue: 0.05, alpha: 1.0), // Deep Athletic Green/Volt on light
+        dark: UIColor(red: 0.831, green: 1.0, blue: 0.247, alpha: 1.0)  // #D4FF3F Volt on dark
+    )
+
+    public static let primaryVolt = Color(red: 0.831, green: 1.0, blue: 0.247) // Always electric volt
+
+    /// Crimson accent
+    public static let accent = dynamicColor(
+        light: UIColor(red: 0.90, green: 0.15, blue: 0.28, alpha: 1.0),
+        dark: UIColor(red: 1.0, green: 0.231, blue: 0.361, alpha: 1.0)
+    )
+
+    /// Base canvas background: Paper White/Soft Gray (#F7F7F8) in light mode, Charcoal Black (#0A0A0A) in dark mode
+    public static let ground = dynamicColor(
+        light: UIColor(red: 0.965, green: 0.965, blue: 0.975, alpha: 1.0),
+        dark: UIColor(red: 0.039, green: 0.039, blue: 0.039, alpha: 1.0)
+    )
+
+    /// Card surfaces: Crisp White (#FFFFFF) in light mode, Dark Slate (#161616) in dark mode
+    public static let surface = dynamicColor(
+        light: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0),
+        dark: UIColor(red: 0.086, green: 0.086, blue: 0.086, alpha: 1.0)
+    )
+
+    /// Elevated surfaces: Light Gray (#F0F0F3) in light mode, Slate (#202020) in dark mode
+    public static let surfaceRaised = dynamicColor(
+        light: UIColor(red: 0.93, green: 0.93, blue: 0.95, alpha: 1.0),
+        dark: UIColor(red: 0.125, green: 0.125, blue: 0.125, alpha: 1.0)
+    )
+
+    /// Input fields & subtle chips
+    public static let field = dynamicColor(
+        light: UIColor(red: 0.90, green: 0.90, blue: 0.93, alpha: 1.0),
+        dark: UIColor(red: 0.149, green: 0.149, blue: 0.149, alpha: 1.0)
+    )
+
+    /// Hairline borders
+    public static let hairline = dynamicColor(
+        light: UIColor(white: 0.0, alpha: 0.08),
+        dark: UIColor(white: 1.0, alpha: 0.10)
+    )
+
+    /// Primary Typography: Near Black (#111113) in light mode, Near White (#F5F5F5) in dark mode
+    public static let text = dynamicColor(
+        light: UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1.0),
+        dark: UIColor(red: 0.96, green: 0.96, blue: 0.96, alpha: 1.0)
+    )
+
+    /// Secondary Typography: Muted Charcoal (#686872) in light mode, Soft Silver (#A6A6A6) in dark mode
+    public static let textSecondary = dynamicColor(
+        light: UIColor(red: 0.42, green: 0.42, blue: 0.48, alpha: 1.0),
+        dark: UIColor(red: 0.65, green: 0.65, blue: 0.65, alpha: 1.0)
+    )
+
+    /// Muted/Disabled Typography
+    public static let textMuted = dynamicColor(
+        light: UIColor(red: 0.62, green: 0.62, blue: 0.68, alpha: 1.0),
+        dark: UIColor(red: 0.45, green: 0.45, blue: 0.45, alpha: 1.0)
+    )
+
+    /// Text sitting on top of primary button
+    public static let onPrimary = dynamicColor(
+        light: UIColor.white,
+        dark: UIColor.black
+    )
 
     // MARK: - Macros Semantics
-    static let caloriesColor = Color(red: 0.831, green: 1.0, blue: 0.247) // Volt
-    static let proteinColor = Color(red: 1.0, green: 0.231, blue: 0.361)  // Crimson
-    static let carbsColor = Color(red: 0.235, green: 0.702, blue: 1.0)    // Sky Blue
-    static let fatColor = Color(red: 1.0, green: 0.757, blue: 0.027)      // Amber
+    public static let caloriesColor = dynamicColor(
+        light: UIColor(red: 0.16, green: 0.65, blue: 0.05, alpha: 1.0),
+        dark: UIColor(red: 0.831, green: 1.0, blue: 0.247, alpha: 1.0)
+    )
+    public static let proteinColor = dynamicColor(
+        light: UIColor(red: 0.88, green: 0.12, blue: 0.25, alpha: 1.0),
+        dark: UIColor(red: 1.0, green: 0.231, blue: 0.361, alpha: 1.0)
+    )
+    public static let carbsColor = dynamicColor(
+        light: UIColor(red: 0.05, green: 0.50, blue: 0.90, alpha: 1.0),
+        dark: UIColor(red: 0.235, green: 0.702, blue: 1.0, alpha: 1.0)
+    )
+    public static let fatColor = dynamicColor(
+        light: UIColor(red: 0.90, green: 0.60, blue: 0.0, alpha: 1.0),
+        dark: UIColor(red: 1.0, green: 0.757, blue: 0.027, alpha: 1.0)
+    )
 
     // MARK: - Spacing Grid
-    enum Spacing {
-        static let xxs: CGFloat = 4
-        static let xs: CGFloat = 8
-        static let sm: CGFloat = 12
-        static let md: CGFloat = 16
-        static let lg: CGFloat = 20
-        static let xl: CGFloat = 24
-        static let xxl: CGFloat = 32
-        static let huge: CGFloat = 48
-        static let screenMargin: CGFloat = 16
+    public enum Spacing {
+        public static let xxs: CGFloat = 4
+        public static let xs: CGFloat = 8
+        public static let sm: CGFloat = 12
+        public static let md: CGFloat = 16
+        public static let lg: CGFloat = 20
+        public static let xl: CGFloat = 24
+        public static let xxl: CGFloat = 32
+        public static let huge: CGFloat = 48
+        public static let screenMargin: CGFloat = 16
     }
 
     // MARK: - Radii
-    enum Radii {
-        static let button: CGFloat = 12
-        static let card: CGFloat = 14
-        static let sheet: CGFloat = 20
-        static let tag: CGFloat = 8
+    public enum Radii {
+        public static let button: CGFloat = 12
+        public static let card: CGFloat = 14
+        public static let sheet: CGFloat = 20
+        public static let tag: CGFloat = 8
     }
 
     // MARK: - Typographic Ramp
-    static let displayFont: Font = .system(size: 32, weight: .black, design: .default)
-    static let heroNumeralFont: Font = .system(size: 44, weight: .black, design: .rounded)
-    static let largeTitleFont: Font = .system(size: 28, weight: .bold, design: .default)
-    static let titleFont: Font = .system(size: 20, weight: .bold, design: .default)
-    static let headlineFont: Font = .system(size: 17, weight: .semibold, design: .default)
-    static let bodyFont: Font = .system(size: 16, weight: .regular, design: .default)
-    static let subheadlineFont: Font = .system(size: 14, weight: .medium, design: .default)
-    static let captionFont: Font = .system(size: 12, weight: .regular, design: .default)
-    static let eyebrowFont: Font = .system(size: 11, weight: .bold, design: .default)
-    static let monoFont: Font = .system(size: 13, weight: .semibold, design: .monospaced)
+    public static let displayFont: Font = .system(size: 32, weight: .black, design: .default)
+    public static let heroNumeralFont: Font = .system(size: 44, weight: .black, design: .rounded)
+    public static let largeTitleFont: Font = .system(size: 28, weight: .bold, design: .default)
+    public static let titleFont: Font = .system(size: 20, weight: .bold, design: .default)
+    public static let headlineFont: Font = .system(size: 17, weight: .semibold, design: .default)
+    public static let bodyFont: Font = .system(size: 16, weight: .regular, design: .default)
+    public static let subheadlineFont: Font = .system(size: 14, weight: .medium, design: .default)
+    public static let captionFont: Font = .system(size: 12, weight: .regular, design: .default)
+    public static let eyebrowFont: Font = .system(size: 11, weight: .bold, design: .default)
+    public static let monoFont: Font = .system(size: 13, weight: .semibold, design: .monospaced)
 }
 
 // MARK: - Color Hex Initializer Extension

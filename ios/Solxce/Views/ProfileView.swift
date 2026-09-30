@@ -11,6 +11,7 @@ struct ProfileView: View {
     @ObservedObject private var subManager = SubscriptionManager.shared
     @ObservedObject private var watchManager = AppleWatchSyncManager.shared
     @ObservedObject private var postStore = FeedPostStore.shared
+    @AppStorage("solxce_app_appearance") private var appAppearanceRaw: String = AppAppearance.system.rawValue
 
     @State private var showingEditGoals = false
     @State private var showingPaywall = false
@@ -134,6 +135,9 @@ struct ProfileView: View {
 
                         // Training Distribution
                         trainingHistoryCard
+
+                        // App Appearance / Theme Mode Card
+                        appearanceCard
                     }
                 }
                 .padding(.horizontal, AppTheme.Spacing.screenMargin)
@@ -827,6 +831,76 @@ struct ProfileView: View {
         .padding(8)
         .background(AppTheme.surfaceRaised)
         .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    // MARK: - App Appearance Theme Selector Card
+    private var appearanceCard: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
+            HStack {
+                Text("APPEARANCE")
+                    .font(AppTheme.eyebrowFont)
+                    .tracking(1.5)
+                    .foregroundStyle(AppTheme.textSecondary)
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Image(systemName: (AppAppearance(rawValue: appAppearanceRaw) ?? .system).iconName)
+                        .font(.system(size: 11, weight: .bold))
+                    Text((AppAppearance(rawValue: appAppearanceRaw) ?? .system).title)
+                        .font(AppTheme.captionFont.weight(.semibold))
+                }
+                .foregroundStyle(AppTheme.primary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(AppTheme.primary.opacity(0.12))
+                .clipShape(Capsule())
+            }
+
+            Text("Customize Solxce with vibrant Dark Mode, crisp Light Mode, or follow your iOS device system preference.")
+                .font(AppTheme.captionFont)
+                .foregroundStyle(AppTheme.textSecondary)
+
+            // Segmented 3-Way Picker
+            HStack(spacing: 8) {
+                ForEach(AppAppearance.allCases) { mode in
+                    let isSelected = appAppearanceRaw == mode.rawValue
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            appAppearanceRaw = mode.rawValue
+                        }
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: mode.iconName)
+                                .font(.system(size: 18, weight: isSelected ? .bold : .medium))
+                                .foregroundStyle(isSelected ? AppTheme.primaryVolt : AppTheme.textSecondary)
+
+                            Text(mode.title)
+                                .font(.system(size: 12, weight: isSelected ? .bold : .medium))
+                                .foregroundStyle(isSelected ? Color.white : AppTheme.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            isSelected ? Color(red: 0.15, green: 0.15, blue: 0.15) : AppTheme.surfaceRaised
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.button))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppTheme.Radii.button)
+                                .strokeBorder(
+                                    isSelected ? AppTheme.primaryVolt : Color.clear,
+                                    lineWidth: 1.5
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.top, 4)
+        }
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
     }
 
     // MARK: - Training History List

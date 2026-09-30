@@ -4,9 +4,16 @@ import SwiftData
 
 @main
 struct SolxceApp: App {
+    @AppStorage("solxce_app_appearance") private var appAppearanceRaw: String = AppAppearance.system.rawValue
+
+    private var currentAppearance: AppAppearance {
+        AppAppearance(rawValue: appAppearanceRaw) ?? .system
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(currentAppearance.colorScheme)
         }
         .modelContainer(for: [
             UserProfile.self,
@@ -24,18 +31,14 @@ struct SolxceApp: App {
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("solxce_has_completed_athlete_signup") private var hasCompletedSignup: Bool = false
+    @AppStorage("solxce_app_appearance") private var appAppearanceRaw: String = AppAppearance.system.rawValue
 
     @State private var selectedTab: Int = 0
     @State private var showAICoachSheet: Bool = false
     @State private var showSignUpSheet: Bool = false
 
-    init() {
-        // Customize TabBar appearance for Athletic Volt theme
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(red: 0.086, green: 0.086, blue: 0.086, alpha: 1.0)
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
+    private var currentAppearance: AppAppearance {
+        AppAppearance(rawValue: appAppearanceRaw) ?? .system
     }
 
     var body: some View {
@@ -72,13 +75,14 @@ struct ContentView: View {
                 .padding(.trailing, 16)
                 .padding(.bottom, 62) // Positioned nicely above the TabBar
         }
-        .preferredColorScheme(.dark)
         .sheet(isPresented: $showAICoachSheet) {
             AICoachChatView()
                 .presentationDragIndicator(.visible)
+                .preferredColorScheme(currentAppearance.colorScheme)
         }
         .fullScreenCover(isPresented: $showSignUpSheet) {
             OnboardingAthleteSignUpView(isCompleted: $hasCompletedSignup)
+                .preferredColorScheme(currentAppearance.colorScheme)
         }
         .onAppear {
             SeedDataManager.seedIfNeeded(context: modelContext)
@@ -99,21 +103,21 @@ struct ContentView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                AppTheme.primary,
-                                AppTheme.primary.opacity(0.85)
+                                AppTheme.primaryVolt,
+                                AppTheme.primaryVolt.opacity(0.85)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 52, height: 52)
-                    .shadow(color: AppTheme.primary.opacity(0.45), radius: 10, x: 0, y: 4)
+                    .shadow(color: AppTheme.primaryVolt.opacity(0.4), radius: 10, x: 0, y: 4)
 
                 // Sparkle / AI icon with pulse badge
                 VStack(spacing: 0) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 20, weight: .black))
-                        .foregroundStyle(AppTheme.onPrimary)
+                        .foregroundStyle(Color.black)
                 }
 
                 // AI small sub-badge
@@ -122,14 +126,14 @@ struct ContentView: View {
                         Spacer()
                         Text("AI")
                             .font(.system(size: 8, weight: .heavy))
-                            .foregroundStyle(AppTheme.text)
+                            .foregroundStyle(Color.white)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1.5)
                             .background(Color.black)
                             .clipShape(Capsule())
                             .overlay(
                                 Capsule()
-                                    .stroke(AppTheme.primary, lineWidth: 1)
+                                    .stroke(AppTheme.primaryVolt, lineWidth: 1)
                             )
                             .offset(x: 4, y: -4)
                     }
@@ -148,7 +152,7 @@ struct ContentView: View {
 struct ScaleBounceButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.88 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.90 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
