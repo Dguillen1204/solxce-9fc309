@@ -9,6 +9,7 @@ struct ProfileView: View {
     @Query private var runEntries: [RunEntry]
     @Query private var macroTargets: [MacroTarget]
     @ObservedObject private var subManager = SubscriptionManager.shared
+    @ObservedObject private var watchManager = AppleWatchSyncManager.shared
 
     @State private var showingEditGoals = false
     @State private var showingPaywall = false
@@ -16,6 +17,7 @@ struct ProfileView: View {
     @State private var showingFastingTracker = false
     @State private var showingEditAthleteType = false
     @State private var showingEditPhotoSheet = false
+    @State private var showingWatchHub = false
 
     var currentProfile: UserProfile {
         if let existing = userProfiles.first {
@@ -55,6 +57,9 @@ struct ProfileView: View {
 
                     // Athlete Archetype Pass Card
                     athleteArchetypeCard
+
+                    // Apple Watch Companion Pass Card
+                    appleWatchProfileCard
 
                     // Solxce Pro Membership Card
                     proMembershipCard
@@ -97,6 +102,9 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showingEditPhotoSheet) {
                 ProfilePhotoPickerSheet(profile: currentProfile)
+            }
+            .sheet(isPresented: $showingWatchHub) {
+                AppleWatchHubView()
             }
         }
     }
@@ -205,6 +213,75 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppTheme.Spacing.xs)
+    }
+
+    // MARK: - Apple Watch Profile Card
+    private var appleWatchProfileCard: some View {
+        Button {
+            showingWatchHub = true
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(watchManager.pairingStatus.tintColor.opacity(0.18))
+                        .frame(width: 48, height: 48)
+
+                    Image(systemName: watchManager.pairingStatus.iconName)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(watchManager.pairingStatus.tintColor)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text("Apple Watch & Health")
+                            .font(AppTheme.headlineFont)
+                            .foregroundStyle(AppTheme.text)
+
+                        Text(watchManager.pairingStatus == .pairedAndReachable ? "LINKED" : "SETUP")
+                            .font(AppTheme.eyebrowFont)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(watchManager.pairingStatus.tintColor.opacity(0.2))
+                            .foregroundStyle(watchManager.pairingStatus.tintColor)
+                            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
+                    }
+
+                    Text("Live heart rate zones, wrist telemetry & Apple Health biometrics sync.")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Text("Manage")
+                        .font(AppTheme.eyebrowFont)
+                        .foregroundStyle(AppTheme.primary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppTheme.primary)
+                }
+            }
+            .padding(AppTheme.Spacing.md)
+            .background(
+                ZStack {
+                    AppTheme.surface
+                    LinearGradient(
+                        colors: [watchManager.pairingStatus.tintColor.opacity(0.08), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                    .stroke(watchManager.pairingStatus.tintColor.opacity(0.25), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Athlete Archetype Badge Card
