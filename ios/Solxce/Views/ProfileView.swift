@@ -15,6 +15,7 @@ struct ProfileView: View {
     @State private var showingProgressReport = false
     @State private var showingFastingTracker = false
     @State private var showingEditAthleteType = false
+    @State private var showingEditPhotoSheet = false
 
     var currentProfile: UserProfile {
         if let existing = userProfiles.first {
@@ -94,27 +95,33 @@ struct ProfileView: View {
             .sheet(isPresented: $showingEditAthleteType) {
                 EditAthleteTypeSheet(profile: currentProfile)
             }
+            .sheet(isPresented: $showingEditPhotoSheet) {
+                ProfilePhotoPickerSheet(profile: currentProfile)
+            }
         }
     }
 
     // MARK: - Profile Header
     private var profileHeader: some View {
         VStack(spacing: AppTheme.Spacing.sm) {
-            ZStack {
-                Circle()
-                    .stroke(currentProfile.athleteType.badgeColor, lineWidth: 3)
-                    .frame(width: 88, height: 88)
-
-                Circle()
-                    .fill(AppTheme.surfaceRaised)
-                    .frame(width: 80, height: 80)
-
-                Image(systemName: currentProfile.avatarSymbol.isEmpty ? currentProfile.athleteType.iconName : currentProfile.avatarSymbol)
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(currentProfile.athleteType.badgeColor)
+            // Interactive Athlete Avatar with Photo Picker trigger
+            AthleteAvatarView(
+                imageData: currentProfile.profileImageData,
+                symbolFallback: currentProfile.avatarSymbol.isEmpty ? currentProfile.athleteType.iconName : currentProfile.avatarSymbol,
+                initials: currentProfile.fullName,
+                ringColor: currentProfile.athleteType.badgeColor,
+                size: 92,
+                showCameraBadge: true,
+                isPublic: currentProfile.isPublicProfile,
+                onCameraTap: {
+                    showingEditPhotoSheet = true
+                }
+            )
+            .onTapGesture {
+                showingEditPhotoSheet = true
             }
 
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 HStack(spacing: 6) {
                     Text(currentProfile.fullName)
                         .font(AppTheme.largeTitleFont)
@@ -131,9 +138,24 @@ struct ProfileView: View {
                     }
                 }
 
-                Text("@\(currentProfile.handle)")
-                    .font(AppTheme.monoFont)
-                    .foregroundStyle(AppTheme.textSecondary)
+                HStack(spacing: 8) {
+                    Text("@\(currentProfile.handle)")
+                        .font(AppTheme.monoFont)
+                        .foregroundStyle(AppTheme.textSecondary)
+
+                    // Public / Private Profile Status Pill
+                    HStack(spacing: 4) {
+                        Image(systemName: currentProfile.isPublicProfile ? "globe.americas.fill" : "lock.fill")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text(currentProfile.isPublicProfile ? "Public Profile" : "Private")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundColor(currentProfile.isPublicProfile ? AppTheme.primary : AppTheme.textSecondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background((currentProfile.isPublicProfile ? AppTheme.primary : AppTheme.textSecondary).opacity(0.12))
+                    .clipShape(Capsule())
+                }
 
                 Text(currentProfile.bio)
                     .font(AppTheme.bodyFont)
@@ -141,6 +163,44 @@ struct ProfileView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
                     .padding(.top, 2)
+
+                // Quick Edit Photo & Profile Action Buttons
+                HStack(spacing: 12) {
+                    Button {
+                        showingEditPhotoSheet = true
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                            Text(currentProfile.profileImageData == nil ? "Add Photo" : "Change Photo")
+                                .font(AppTheme.eyebrowFont)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(AppTheme.surfaceRaised)
+                        .foregroundColor(AppTheme.text)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(AppTheme.hairline, lineWidth: 1))
+                    }
+
+                    Button {
+                        showingEditAthleteType = true
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "slider.horizontal.3")
+                                .font(.system(size: 11, weight: .semibold))
+                            Text("Edit Profile")
+                                .font(AppTheme.eyebrowFont)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(AppTheme.surfaceRaised)
+                        .foregroundColor(AppTheme.text)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(AppTheme.hairline, lineWidth: 1))
+                    }
+                }
+                .padding(.top, 4)
             }
         }
         .frame(maxWidth: .infinity)
@@ -456,11 +516,60 @@ struct EditAthleteTypeSheet: View {
     @State private var fullName: String = ""
     @State private var handle: String = ""
     @State private var bio: String = ""
+    @State private var isPublic: Bool = true
+    @State private var showingPhotoPicker = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: AppTheme.Spacing.lg) {
+                    // Profile Photo & Privacy Status Header
+                    VStack(spacing: 12) {
+                        AthleteAvatarView(
+                            imageData: profile.profileImageData,
+                            symbolFallback: profile.avatarSymbol.isEmpty ? profile.athleteType.iconName : profile.avatarSymbol,
+                            initials: fullName.isEmpty ? profile.fullName : fullName,
+                            ringColor: selectedType.badgeColor,
+                            size: 84,
+                            showCameraBadge: true,
+                            isPublic: isPublic,
+                            onCameraTap: {
+                                showingPhotoPicker = true
+                            }
+                        )
+
+                        Button {
+                            showingPhotoPicker = true
+                        } label: {
+                            Text(profile.profileImageData == nil ? "Add Profile Photo" : "Change Profile Photo")
+                                .font(AppTheme.headlineFont)
+                                .foregroundColor(AppTheme.primary)
+                        }
+                    }
+                    .padding(.top, 8)
+
+                    // Privacy Toggle
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("PRIVACY & COMMUNITY")
+                            .font(AppTheme.eyebrowFont)
+                            .foregroundColor(AppTheme.textSecondary)
+
+                        Toggle(isOn: $isPublic) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Make Profile & Photo Public")
+                                    .font(AppTheme.headlineFont)
+                                    .foregroundColor(AppTheme.text)
+                                Text("Public athletes show up in the Solxce community feed and leaderboards.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(AppTheme.textSecondary)
+                            }
+                        }
+                        .tint(AppTheme.primary)
+                    }
+                    .padding(AppTheme.Spacing.md)
+                    .background(AppTheme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+
                     VStack(alignment: .leading, spacing: 12) {
                         Text("SELECT ATHLETE ARCHETYPE")
                             .font(AppTheme.eyebrowFont)
@@ -558,7 +667,7 @@ struct EditAthleteTypeSheet: View {
                 .padding(.bottom, 32)
             }
             .background(AppTheme.ground.ignoresSafeArea())
-            .navigationTitle("Edit Athlete Type")
+            .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -569,6 +678,7 @@ struct EditAthleteTypeSheet: View {
                         Button {
                             // Persist to SwiftData
                             profile.athleteType = selectedType
+                            profile.isPublicProfile = isPublic
                             if !fullName.isEmpty { profile.fullName = fullName }
                             if !handle.isEmpty { profile.handle = handle }
                             if !bio.isEmpty { profile.bio = bio }
@@ -590,11 +700,15 @@ struct EditAthleteTypeSheet: View {
                         }
                 }
             }
+            .sheet(isPresented: $showingPhotoPicker) {
+                ProfilePhotoPickerSheet(profile: profile)
+            }
             .onAppear {
                 selectedType = profile.athleteType
                 fullName = profile.fullName
                 handle = profile.handle
                 bio = profile.bio
+                isPublic = profile.isPublicProfile
             }
         }
     }
