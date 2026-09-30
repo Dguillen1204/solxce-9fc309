@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Query private var userProfiles: [UserProfile]
     @ObservedObject private var subManager = SubscriptionManager.shared
     @AppStorage("solxce_app_appearance") private var appAppearanceRaw: String = AppAppearance.system.rawValue
+    @AppStorage(AppTheme.activeAccentKey) private var selectedAccentRaw: String = AppAccentColor.volt.rawValue
 
     // Account Credentials State
     @State private var fullName: String = ""
@@ -55,6 +56,9 @@ struct SettingsView: View {
 
                     // MARK: - Appearance (Dark / Light / System)
                     appearanceSection
+
+                    // MARK: - Vibrant Theme Color Selection
+                    vibrantColorPaletteSection
 
                     // MARK: - Account Details (Username, Name, Email, Bio)
                     accountDetailsSection
@@ -274,6 +278,68 @@ struct SettingsView: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: AppTheme.Radii.card)
                                 .stroke(isSelected ? AppTheme.primary : AppTheme.hairline, lineWidth: isSelected ? 1.5 : 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    // MARK: - Vibrant Theme Color Section
+    private var vibrantColorPaletteSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(
+                title: "Theme Color & Accents",
+                subtitle: "Customize the high-energy vibrant accent across your dashboard & telemetry",
+                icon: "paintpalette.fill"
+            )
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(AppAccentColor.allCases) { accent in
+                    let isSelected = (selectedAccentRaw == accent.rawValue)
+
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            selectedAccentRaw = accent.rawValue
+                            UserDefaults.standard.set(accent.rawValue, forKey: AppTheme.activeAccentKey)
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            // Swatch Circle with gradient glow
+                            ZStack {
+                                Circle()
+                                    .fill(accent.gradient)
+                                    .frame(width: 32, height: 32)
+                                    .shadow(color: accent.color.opacity(isSelected ? 0.6 : 0.2), radius: isSelected ? 6 : 2)
+
+                                if isSelected {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 12, weight: .black))
+                                        .foregroundStyle(accent == .monochrome ? Color.black : Color.white)
+                                }
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(accent.displayName)
+                                    .font(AppTheme.subheadlineFont.weight(isSelected ? .bold : .semibold))
+                                    .foregroundStyle(isSelected ? AppTheme.text : AppTheme.textSecondary)
+                                    .lineLimit(1)
+
+                                Text(accent.hexCode)
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(AppTheme.textMuted)
+                            }
+
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(isSelected ? AppTheme.surfaceRaised : AppTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppTheme.Radii.card)
+                                .stroke(isSelected ? accent.color : AppTheme.hairline, lineWidth: isSelected ? 2.0 : 1.0)
                         )
                     }
                     .buttonStyle(.plain)
