@@ -215,7 +215,7 @@ struct FeedView: View {
     // Active full screen reel modal
     @State private var activeReelPost: AthletePost? = nil
     @State private var showingCreatePostSheet = false
-    @State private var shareSheetItem: String? = nil
+    @State private var shareSheetItem: ShareTextItem? = nil
 
     var body: some View {
         NavigationStack {
@@ -225,7 +225,7 @@ struct FeedView: View {
                         SimplePostCardView(
                             post: $post,
                             onShare: {
-                                shareSheetItem = "Check out @\(post.authorHandle)'s workout on Solxce: \(post.caption)"
+                                shareSheetItem = ShareTextItem(text: "Check out @\(post.authorHandle)'s workout on Solxce: \(post.caption)")
                             },
                             onOpenReel: {
                                 activeReelPost = post
@@ -266,8 +266,8 @@ struct FeedView: View {
                     }
                 )
             }
-            .sheet(item: $shareSheetItem) { shareText in
-                ShareActivitySheet(text: shareText)
+            .sheet(item: $shareSheetItem) { item in
+                ShareActivitySheet(text: item.text)
             }
             .fullScreenCover(item: $activeReelPost) { reelPost in
                 if let index = posts.firstIndex(where: { $0.id == reelPost.id }) {
@@ -665,6 +665,12 @@ struct EqualizerAnimationView: View {
                 value: animating
             )
     }
+}
+
+// MARK: - Share Item Wrapper
+struct ShareTextItem: Identifiable {
+    let id = UUID()
+    let text: String
 }
 
 // MARK: - Native Share Sheet Helper
