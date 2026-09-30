@@ -237,15 +237,6 @@ final class HealthKitService: ObservableObject {
         }
     }
     
-    private func processHeartRateSamples(_ samples: [HKSample]?) {
-        guard let samples = samples as? [HKQuantitySample], let lastSample = samples.last else { return }
-        let bpm = lastSample.quantity.doubleValue(for: HKUnit(from: "count/min"))
-        DispatchQueue.main.async {
-            self.currentHeartRateBpm = bpm
-            self.updateHeartRateZone(bpm: bpm)
-        }
-    }
-    
     private func updateHeartRateZone(bpm: Double) {
         // Approximate standard 5-zone model for max HR 190
         if bpm < 114 {
