@@ -887,7 +887,7 @@ struct ProfileView: View {
                         VStack(spacing: 6) {
                             Image(systemName: mode.iconName)
                                 .font(.system(size: 18, weight: isSelected ? .bold : .medium))
-                                .foregroundStyle(isSelected ? AppTheme.primaryVolt : AppTheme.textSecondary)
+                                .foregroundStyle(isSelected ? AppTheme.primary : AppTheme.textSecondary)
 
                             Text(mode.title)
                                 .font(.system(size: 12, weight: isSelected ? .bold : .medium))
@@ -902,7 +902,7 @@ struct ProfileView: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: AppTheme.Radii.button)
                                 .strokeBorder(
-                                    isSelected ? AppTheme.primaryVolt : Color.clear,
+                                    isSelected ? AppTheme.primary : Color.clear,
                                     lineWidth: 1.5
                                 )
                         )

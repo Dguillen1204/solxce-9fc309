@@ -35,8 +35,8 @@ public enum AppAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// Athletic Volt Design System tokens for Solxce
-/// Adaptive tokens support both Dark and Light modes while preserving high-energy Volt accents and crisp readability.
+/// Monochrome Platinum & Onyx Design System tokens for Solxce (Whoop / Apex Telemetry Luxury aesthetic)
+/// Pitch-black obsidian canvas, crisp specular white primary, platinum silver metallic accents, and deep charcoal surfaces.
 public enum AppTheme {
     // MARK: - Adaptive Color Helper
     public static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
@@ -45,67 +45,69 @@ public enum AppTheme {
         })
     }
 
-    // MARK: - Core Colors
-    /// High-energy Volt accent: slightly deeper in light mode (#1B9E00 or #A3D900 / #0E7C00) for contrast, bright Volt (#D4FF3F) in dark mode
+    // MARK: - Core Colors (Monochrome Platinum & Onyx)
+    /// Primary Specular White (#FFFFFF)
     public static let primary = dynamicColor(
-        light: UIColor(red: 0.16, green: 0.65, blue: 0.05, alpha: 1.0), // Deep Athletic Green/Volt on light
-        dark: UIColor(red: 0.831, green: 1.0, blue: 0.247, alpha: 1.0)  // #D4FF3F Volt on dark
+        light: UIColor(red: 0.05, green: 0.05, blue: 0.06, alpha: 1.0),
+        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // #FFFFFF
     )
 
-    public static let primaryVolt = Color(red: 0.831, green: 1.0, blue: 0.247) // Always electric volt
-
-    /// Crimson accent
+    /// Platinum Silver metallic accent (#E2E8F0)
     public static let accent = dynamicColor(
-        light: UIColor(red: 0.90, green: 0.15, blue: 0.28, alpha: 1.0),
-        dark: UIColor(red: 1.0, green: 0.231, blue: 0.361, alpha: 1.0)
+        light: UIColor(red: 0.25, green: 0.27, blue: 0.30, alpha: 1.0),
+        dark: UIColor(red: 0.886, green: 0.910, blue: 0.941, alpha: 1.0) // #E2E8F0
     )
 
-    /// Base canvas background: Paper White/Soft Gray (#F7F7F8) in light mode, Pure True Black (#000000) in dark mode
+    /// Pure Platinum highlight token
+    public static let platinum = Color(red: 0.886, green: 0.910, blue: 0.941) // #E2E8F0
+    public static let primaryVolt = platinum // Compatibility alias mapping to platinum highlight
+
+    /// Base canvas background: True Black (#000000)
     public static let ground = dynamicColor(
         light: UIColor(red: 0.965, green: 0.965, blue: 0.975, alpha: 1.0),
-        dark: UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        dark: UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0) // #000000
     )
 
-    /// Card surfaces: Crisp White (#FFFFFF) in light mode, Deep Obsidian (#111111 / #141416) in dark mode
+    /// Card surfaces: Deep Obsidian (#121212)
     public static let surface = dynamicColor(
         light: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0),
-        dark: UIColor(red: 0.07, green: 0.07, blue: 0.07, alpha: 1.0)
+        dark: UIColor(red: 0.071, green: 0.071, blue: 0.071, alpha: 1.0) // #121212
     )
 
-    /// Elevated surfaces: Light Gray (#F0F0F3) in light mode, Slate Charcoal (#1A1A1A) in dark mode
+    /// Elevated surfaces: Refined Charcoal (#1C1C1C)
     public static let surfaceRaised = dynamicColor(
         light: UIColor(red: 0.93, green: 0.93, blue: 0.95, alpha: 1.0),
-        dark: UIColor(red: 0.11, green: 0.11, blue: 0.11, alpha: 1.0)
+        dark: UIColor(red: 0.110, green: 0.110, blue: 0.110, alpha: 1.0) // #1C1C1C
     )
 
-    /// Input fields & subtle chips
+    /// Input fields & subtle chips (#222224)
     public static let field = dynamicColor(
         light: UIColor(red: 0.90, green: 0.90, blue: 0.93, alpha: 1.0),
-        dark: UIColor(red: 0.14, green: 0.14, blue: 0.14, alpha: 1.0)
+        dark: UIColor(red: 0.133, green: 0.133, blue: 0.141, alpha: 1.0)
     )
 
-    /// Hairline borders
+    /// Hairline borders (Specular platinum shimmer)
     public static let hairline = dynamicColor(
         light: UIColor(white: 0.0, alpha: 0.08),
-        dark: UIColor(white: 1.0, alpha: 0.10)
+        dark: UIColor(white: 1.0, alpha: 0.12)
     )
 
-    /// Primary Typography: Near Black (#111113) in light mode, Near White (#F5F5F5) in dark mode
+    /// Primary Typography: High Contrast White (#FFFFFF)
     public static let text = dynamicColor(
         light: UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1.0),
-        dark: UIColor(red: 0.96, green: 0.96, blue: 0.96, alpha: 1.0)
+        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // #FFFFFF
     )
 
-    /// Secondary Typography: Muted Charcoal (#686872) in light mode, Soft Silver (#A6A6A6) in dark mode
+    /// Secondary Typography: Platinum Muted (#94A3B8 / #CBD5E1)
     public static let textSecondary = dynamicColor(
         light: UIColor(red: 0.42, green: 0.42, blue: 0.48, alpha: 1.0),
-        dark: UIColor(red: 0.65, green: 0.65, blue: 0.65, alpha: 1.0)
+        dark: UIColor(red: 0.65, green: 0.67, blue: 0.72, alpha: 1.0)
     )
 
-    /// Muted/Disabled Typography
+    /// Muted/Disabled Typography (#64748B)
     public static let textMuted = dynamicColor(
         light: UIColor(red: 0.62, green: 0.62, blue: 0.68, alpha: 1.0),
-        dark: UIColor(red: 0.45, green: 0.45, blue: 0.45, alpha: 1.0)
+        dark: UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 1.0)
     )
 
     /// Text sitting on top of primary button
@@ -114,22 +116,22 @@ public enum AppTheme {
         dark: UIColor.black
     )
 
-    // MARK: - Macros Semantics
+    // MARK: - Telemetry & Macro Semantics (Monochrome / High Contrast Telemetry)
     public static let caloriesColor = dynamicColor(
-        light: UIColor(red: 0.16, green: 0.65, blue: 0.05, alpha: 1.0),
-        dark: UIColor(red: 0.831, green: 1.0, blue: 0.247, alpha: 1.0)
+        light: UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0),
+        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // Specular White
     )
     public static let proteinColor = dynamicColor(
-        light: UIColor(red: 0.88, green: 0.12, blue: 0.25, alpha: 1.0),
-        dark: UIColor(red: 1.0, green: 0.231, blue: 0.361, alpha: 1.0)
+        light: UIColor(red: 0.35, green: 0.37, blue: 0.42, alpha: 1.0),
+        dark: UIColor(red: 0.886, green: 0.910, blue: 0.941, alpha: 1.0) // Platinum
     )
     public static let carbsColor = dynamicColor(
-        light: UIColor(red: 0.05, green: 0.50, blue: 0.90, alpha: 1.0),
-        dark: UIColor(red: 0.235, green: 0.702, blue: 1.0, alpha: 1.0)
+        light: UIColor(red: 0.45, green: 0.48, blue: 0.55, alpha: 1.0),
+        dark: UIColor(red: 0.65, green: 0.70, blue: 0.78, alpha: 1.0) // Silver Slate
     )
     public static let fatColor = dynamicColor(
-        light: UIColor(red: 0.90, green: 0.60, blue: 0.0, alpha: 1.0),
-        dark: UIColor(red: 1.0, green: 0.757, blue: 0.027, alpha: 1.0)
+        light: UIColor(red: 0.55, green: 0.58, blue: 0.65, alpha: 1.0),
+        dark: UIColor(red: 0.45, green: 0.49, blue: 0.56, alpha: 1.0) // Charcoal Steel
     )
 
     // MARK: - Spacing Grid

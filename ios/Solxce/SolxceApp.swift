@@ -103,15 +103,15 @@ struct ContentView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                AppTheme.primaryVolt,
-                                AppTheme.primaryVolt.opacity(0.85)
+                                AppTheme.primary,
+                                AppTheme.accent
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 52, height: 52)
-                    .shadow(color: AppTheme.primaryVolt.opacity(0.4), radius: 10, x: 0, y: 4)
+                    .shadow(color: AppTheme.accent.opacity(0.35), radius: 10, x: 0, y: 4)
 
                 // Sparkle / AI icon with pulse badge
                 VStack(spacing: 0) {
@@ -133,7 +133,7 @@ struct ContentView: View {
                             .clipShape(Capsule())
                             .overlay(
                                 Capsule()
-                                    .stroke(AppTheme.primaryVolt, lineWidth: 1)
+                                    .stroke(AppTheme.accent, lineWidth: 1)
                             )
                             .offset(x: 4, y: -4)
                     }
