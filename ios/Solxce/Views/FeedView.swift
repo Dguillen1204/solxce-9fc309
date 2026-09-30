@@ -4,21 +4,23 @@ import SwiftData
 
 // MARK: - Local Feed Fixture Model
 public struct AthletePost: Identifiable {
-    public let id = UUID()
+    public let id: UUID = UUID()
     public let authorName: String
     public let authorHandle: String
     public let athleteType: AthleteType
+    public let authorProfileImageData: Data?
+    public let isPublicAuthor: Bool
     public let timeAgo: String
     public let workoutTag: String
     public let workoutStats: String
-    public var caption: String
+    public let caption: String
     public let imageName: String
-    public var mediaType: PostMediaType = .photo
-    public var mediaItems: [PostMediaItem] = []
-    public var mediaIconName: String = "figure.strengthtraining.traditional"
-    public var gradientColors: [Color] = [Color(red: 0.15, green: 0.05, blue: 0.05), Color(red: 0.35, green: 0.1, blue: 0.1)]
-    public var audioTrack: AudioTrack? = AudioTrack.library.first
-    public var textOverlay: String? = nil
+    public let mediaType: PostMediaType
+    public let mediaItems: [PostMediaItem]
+    public let mediaIconName: String
+    public let gradientColors: [Color]
+    public let audioTrack: AudioTrack?
+    public let textOverlay: String?
     public var likesCount: Int
     public var isLiked: Bool
     public var comments: [PostComment]
@@ -27,6 +29,8 @@ public struct AthletePost: Identifiable {
         authorName: String,
         authorHandle: String,
         athleteType: AthleteType,
+        authorProfileImageData: Data? = nil,
+        isPublicAuthor: Bool = true,
         timeAgo: String,
         workoutTag: String,
         workoutStats: String,
@@ -45,6 +49,8 @@ public struct AthletePost: Identifiable {
         self.authorName = authorName
         self.authorHandle = authorHandle
         self.athleteType = athleteType
+        self.authorProfileImageData = authorProfileImageData
+        self.isPublicAuthor = isPublicAuthor
         self.timeAgo = timeAgo
         self.workoutTag = workoutTag
         self.workoutStats = workoutStats
@@ -62,6 +68,7 @@ public struct AthletePost: Identifiable {
         self.isLiked = isLiked
         self.comments = comments
     }
+}
 }
 
 public struct PostComment: Identifiable {
@@ -259,6 +266,8 @@ struct FeedView: View {
                     authorName: currentUserName,
                     authorHandle: currentUserHandle,
                     athleteType: currentUserAthleteType,
+                    authorProfileImageData: currentUserProfile?.profileImageData,
+                    isPublicAuthor: currentUserProfile?.isPublicProfile ?? true,
                     onPost: { newPost in
                         withAnimation(.spring()) {
                             posts.insert(newPost, at: 0)
@@ -332,19 +341,29 @@ struct SimplePostCardView: View {
                     HStack(spacing: 10) {
                         // Author Avatar & Handle
                         HStack(spacing: 8) {
-                            Circle()
-                                .fill(AppTheme.surfaceRaised)
-                                .frame(width: 32, height: 32)
-                                .overlay(
-                                    Image(systemName: post.athleteType.iconName)
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(post.athleteType.badgeColor)
-                                )
+                            AthleteAvatarView(
+                                imageData: post.authorProfileImageData,
+                                symbolFallback: post.athleteType.iconName,
+                                initials: post.authorName,
+                                ringColor: post.athleteType.badgeColor,
+                                size: 34,
+                                showCameraBadge: false,
+                                isPublic: post.isPublicAuthor
+                            )
 
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(post.authorName)
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundColor(.white)
+                                HStack(spacing: 4) {
+                                    Text(post.authorName)
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundColor(.white)
+
+                                    if post.isPublicAuthor {
+                                        Image(systemName: "globe.americas.fill")
+                                            .font(.system(size: 9))
+                                            .foregroundColor(AppTheme.primary)
+                                    }
+                                }
+
                                 Text("@\(post.authorHandle)")
                                     .font(.system(size: 10))
                                     .foregroundColor(.white.opacity(0.8))
