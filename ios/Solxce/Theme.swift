@@ -2,47 +2,6 @@
 import SwiftUI
 import UIKit
 
-/// Theme color accent selection persisted in AppStorage
-public enum AppColorPalette: String, CaseIterable, Identifiable {
-    case crimson = "crimson"
-    case volt = "volt"
-    case cyan = "cyan"
-
-    public var id: String { rawValue }
-
-    public var title: String {
-        switch self {
-        case .crimson: return "Forge Crimson"
-        case .volt: return "Apex Volt"
-        case .cyan: return "Apex Cyan"
-        }
-    }
-
-    public var subtitle: String {
-        switch self {
-        case .crimson: return "Original Luxury Crimson (#EF4444)"
-        case .volt: return "Electric Neon Volt (#CCFF00)"
-        case .cyan: return "Luminous Ice Cyan (#38BDF8)"
-        }
-    }
-
-    public var accentColor: Color {
-        switch self {
-        case .crimson: return Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444
-        case .volt: return Color(red: 0.800, green: 1.000, blue: 0.000) // #CCFF00
-        case .cyan: return Color(red: 0.220, green: 0.741, blue: 0.973) // #38BDF8
-        }
-    }
-
-    public var accentHex: String {
-        switch self {
-        case .crimson: return "#EF4444"
-        case .volt: return "#CCFF00"
-        case .cyan: return "#38BDF8"
-        }
-    }
-}
-
 /// Appearance selection setting persisted in AppStorage
 public enum AppAppearance: String, CaseIterable, Identifiable {
     case system = "system"
@@ -76,9 +35,9 @@ public enum AppAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// Original Design System tokens for Solxce (Equinox / Luxury Obsidian & Forge Crimson aesthetic)
-/// Pitch-black obsidian canvas (#000000), crisp specular white primary (#FFFFFF),
-/// iconic Forge Crimson accent (#EF4444), and refined obsidian surfaces (#121212).
+/// Pure Monochrome Design System tokens for Solxce (True Black & Specular White aesthetic)
+/// Pitch-black canvas (#000000), crisp specular white primary/accent (#FFFFFF),
+/// and refined obsidian surfaces (#121212 / #1C1C1C).
 public enum AppTheme {
     // MARK: - Adaptive Color Helper
     public static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
@@ -87,26 +46,31 @@ public enum AppTheme {
         })
     }
 
-    // MARK: - Core Colors (Original Forge Crimson & Obsidian Luxury)
+    // MARK: - Core Colors (Pure Monochrome: Black, Obsidian & Specular White)
     /// Primary Specular White (#FFFFFF)
     public static let primary = dynamicColor(
         light: UIColor(red: 0.05, green: 0.05, blue: 0.06, alpha: 1.0),
         dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // #FFFFFF
     )
 
-    /// Original Forge Crimson accent (#EF4444)
+    /// Pure Monochrome Primary Accent (#FFFFFF)
     public static let accent = dynamicColor(
-        light: UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1.0),
-        dark: UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) // #EF4444 Crimson
+        light: UIColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 1.0),
+        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // Crisp White
     )
 
-    /// Named accent tokens
-    public static let crimson = Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444 (Original Signature)
-    public static let volt = Color(red: 0.800, green: 1.000, blue: 0.000) // #CCFF00
-    public static let neonLime = Color(red: 0.639, green: 0.902, blue: 0.208) // #A3E635
-    public static let cyan = Color(red: 0.220, green: 0.741, blue: 0.973) // #38BDF8
+    /// Neutral Specular / Platinum / Charcoal tokens
+    public static let specularWhite = Color(red: 1.0, green: 1.0, blue: 1.0) // #FFFFFF
     public static let platinum = Color(red: 0.886, green: 0.910, blue: 0.941) // #E2E8F0
-    public static let primaryVolt = crimson // Compatibility alias pointing to active accent
+    public static let silver = Color(red: 0.65, green: 0.67, blue: 0.72)
+    public static let darkCharcoal = Color(red: 0.18, green: 0.18, blue: 0.20)
+
+    // Compatibility aliases mapping cleanly to monochrome
+    public static let crimson = specularWhite
+    public static let volt = specularWhite
+    public static let neonLime = specularWhite
+    public static let cyan = specularWhite
+    public static let primaryVolt = specularWhite
 
     /// Base canvas background: True Black (#000000)
     public static let ground = dynamicColor(
@@ -162,22 +126,22 @@ public enum AppTheme {
         dark: UIColor.black
     )
 
-    // MARK: - Telemetry & Macro Semantics
+    // MARK: - Telemetry & Macro Semantics (Clean Monochrome Scale)
     public static let caloriesColor = dynamicColor(
-        light: UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1.0),
-        dark: UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) // #EF4444 Crimson
+        light: UIColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0),
+        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // Crisp White
     )
     public static let proteinColor = dynamicColor(
-        light: UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0),
-        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // Specular White
+        light: UIColor(red: 0.30, green: 0.30, blue: 0.35, alpha: 1.0),
+        dark: UIColor(red: 0.88, green: 0.90, blue: 0.94, alpha: 1.0) // Platinum / Ice White
     )
     public static let carbsColor = dynamicColor(
-        light: UIColor(red: 0.35, green: 0.37, blue: 0.42, alpha: 1.0),
-        dark: UIColor(red: 0.98, green: 0.60, blue: 0.20, alpha: 1.0) // Amber / Sunset
+        light: UIColor(red: 0.45, green: 0.47, blue: 0.52, alpha: 1.0),
+        dark: UIColor(red: 0.68, green: 0.70, blue: 0.75, alpha: 1.0) // Silver Muted
     )
     public static let fatColor = dynamicColor(
-        light: UIColor(red: 0.55, green: 0.58, blue: 0.65, alpha: 1.0),
-        dark: UIColor(red: 0.45, green: 0.49, blue: 0.56, alpha: 1.0) // Charcoal Steel
+        light: UIColor(red: 0.60, green: 0.62, blue: 0.68, alpha: 1.0),
+        dark: UIColor(red: 0.45, green: 0.47, blue: 0.52, alpha: 1.0) // Charcoal Steel
     )
 
     // MARK: - Spacing Grid
