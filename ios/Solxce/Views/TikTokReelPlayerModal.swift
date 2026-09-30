@@ -7,121 +7,47 @@ struct TikTokReelPlayerModal: View {
     var onAddComment: (PostComment) -> Void
 
     @State private var isPlaying: Bool = true
-    @State private var isMuted: Bool = false
-    @State private var videoProgress: Double = 0.35
     @State private var showHeartBurst: Bool = false
-    @State private var showCommentsOverlay: Bool = false
-    @State private var commentText: String = ""
-
-    let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    @State private var showCommentSheet: Bool = false
+    @State private var newCommentText: String = ""
+    @State private var currentSlideIndex: Int = 0
 
     var body: some View {
         ZStack {
-            // Immersive Dark Background
             Color.black.ignoresSafeArea()
 
-            // Main Media Viewport (9:16 Full Screen Video / Picture style)
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        post.gradientColors.first ?? Color(red: 0.1, green: 0.1, blue: 0.15),
-                        post.gradientColors.last ?? Color(red: 0.2, green: 0.05, blue: 0.1)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+            // Main Media Content Viewport (Swipeable Carousel for Photos or Full Screen Video)
+            if post.mediaItems.count > 1 {
+                TabView(selection: $currentSlideIndex) {
+                    ForEach(Array(post.mediaItems.enumerated()), id: \.element.id) { index, item in
+                        fullScreenMediaCanvas(for: item)
+                            .tag(index)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
                 .ignoresSafeArea()
-
-                // Animated Video Simulation Visualizer
-                VStack(spacing: 20) {
-                    ZStack {
-                        Circle()
-                            .fill(post.athleteType.badgeColor.opacity(0.15))
-                            .frame(width: 140, height: 140)
-                            .scaleEffect(isPlaying ? 1.08 : 1.0)
-                            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPlaying)
-
-                        Image(systemName: post.mediaIconName)
-                            .font(.system(size: 64, weight: .bold))
-                            .foregroundColor(post.athleteType.badgeColor)
-                    }
-
-                    if post.mediaType == .video {
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(AppTheme.accent)
-                                .frame(width: 8, height: 8)
-                            Text(isPlaying ? "PLAYING 4K VIDEO" : "PAUSED")
-                                .font(AppTheme.eyebrowFont)
-                                .foregroundColor(.white)
-                                .tracking(1.5)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.6))
-                        .clipShape(Capsule())
-                    }
-
-                    // On-screen custom text sticker overlay if present
-                    if let stickerText = post.textOverlay, !stickerText.isEmpty {
-                        Text(stickerText)
-                            .font(.system(size: 20, weight: .heavy, design: .rounded))
-                            .foregroundColor(AppTheme.primary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.black.opacity(0.75))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(AppTheme.primary, lineWidth: 2)
-                            )
-                            .shadow(color: AppTheme.primary.opacity(0.4), radius: 8)
-                    }
-                }
-
-                // Double tap heart burst animation
-                if showHeartBurst {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 100))
-                        .foregroundColor(AppTheme.accent)
-                        .scaleEffect(1.2)
-                        .transition(.scale.combined(with: .opacity))
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture(count: 2) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    showHeartBurst = true
-                    if !post.isLiked {
-                        post.isLiked = true
-                        post.likesCount += 1
-                    }
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    withAnimation { showHeartBurst = false }
-                }
-            }
-            .onTapGesture(count: 1) {
-                isPlaying.toggle()
+            } else if let singleItem = post.mediaItems.first {
+                fullScreenMediaCanvas(for: singleItem)
+                    .ignoresSafeArea()
+            } else {
+                fullScreenMediaCanvas(for: PostMediaItem(id: "fallback", title: post.workoutTag, iconName: post.mediaIconName, subtitle: post.workoutStats))
+                    .ignoresSafeArea()
             }
 
-            // Top Bar Controls (Close, Sound indicator with Apple Music / Spotify branding)
+            // Top Overlay: Dismiss & Music Soundtrack Indicator
             VStack {
-                HStack {
+                HStack(alignment: .center, spacing: 12) {
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .bold))
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(.white)
-                            .padding(10)
-                            .background(Color.black.opacity(0.5))
+                            .frame(width: 40, height: 40)
+                            .background(Color.black.opacity(0.45))
                             .clipShape(Circle())
                     }
 
-                    Spacer()
-
-                    // Audio Pill in top header with streaming service badge
                     if let audio = post.audioTrack {
                         HStack(spacing: 6) {
                             Image(systemName: audio.platform.iconName)
@@ -129,303 +55,293 @@ struct TikTokReelPlayerModal: View {
                                 .foregroundColor(audio.platform.brandColor)
 
                             EqualizerAnimationView()
-                                .frame(width: 14, height: 12)
+                                .frame(width: 12, height: 10)
                                 .foregroundColor(AppTheme.primary)
 
                             Text("\(audio.title) · \(audio.artist)")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
-                                .frame(maxWidth: 160, alignment: .leading)
                         }
-                        .padding(.horizontal, 10)
+                        .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.black.opacity(0.6))
+                        .background(Color.black.opacity(0.55))
                         .clipShape(Capsule())
                     }
 
                     Spacer()
 
-                    Button {
-                        isMuted.toggle()
-                    } label: {
-                        Image(systemName: isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                            .font(.system(size: 16, weight: .bold))
+                    // Photo Carousel Index Indicator (e.g. 1/3)
+                    if post.mediaItems.count > 1 {
+                        Text("\(currentSlideIndex + 1)/\(post.mediaItems.count)")
+                            .font(.system(size: 12, weight: .black, design: .monospaced))
                             .foregroundColor(.white)
-                            .padding(10)
-                            .background(Color.black.opacity(0.5))
-                            .clipShape(Circle())
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.black.opacity(0.6))
+                            .clipShape(Capsule())
                     }
                 }
-                .padding(.horizontal, AppTheme.Spacing.screenMargin)
-                .padding(.top, 16)
+                .padding(.horizontal, 16)
+                .padding(.top, 50)
 
                 Spacer()
             }
 
-            // Right Action Rail (TikTok / Reels layout)
-            HStack {
-                Spacer()
-
-                VStack(spacing: 20) {
-                    Spacer()
-
-                    // Athlete Profile Avatar
-                    ZStack {
-                        Circle()
-                            .stroke(post.athleteType.badgeColor, lineWidth: 2)
-                            .frame(width: 48, height: 48)
-
-                        Circle()
-                            .fill(Color.black.opacity(0.7))
-                            .frame(width: 44, height: 44)
-
-                        Image(systemName: post.athleteType.iconName)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(post.athleteType.badgeColor)
-                    }
-
-                    // Like Button
-                    Button {
-                        withAnimation(.spring()) {
-                            post.isLiked.toggle()
-                            post.likesCount += post.isLiked ? 1 : -1
-                        }
-                    } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: post.isLiked ? "heart.fill" : "heart.fill")
-                                .font(.system(size: 28))
-                                .foregroundColor(post.isLiked ? AppTheme.accent : .white)
-                            Text("\(post.likesCount)")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                    }
-
-                    // Comments Button
-                    Button {
-                        showCommentsOverlay = true
-                    } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: "bubble.right.fill")
-                                .font(.system(size: 26))
-                                .foregroundColor(.white)
-                            Text("\(post.comments.count)")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                    }
-
-                    // Share Button
-                    Button {
-                        // Demo action feedback
-                    } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: "arrowshape.turn.up.right.fill")
-                                .font(.system(size: 26))
-                                .foregroundColor(.white)
-                            Text("Share")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                    }
-
-                    // Rotating Vinyl Sound Disc (TikTok style with Platform color)
-                    if let audio = post.audioTrack {
-                        ZStack {
-                            Circle()
-                                .fill(Color.black)
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Circle().stroke(audio.platform.brandColor, lineWidth: 2)
-                                )
-
-                            Image(systemName: audio.platform.iconName)
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(audio.platform.brandColor)
-                        }
-                    }
-
-                    Spacer().frame(height: 30)
-                }
-                .padding(.trailing, 16)
-            }
-
-            // Bottom Caption & Creator Info
+            // Bottom & Right Controls Overlay
             VStack {
                 Spacer()
 
-                VStack(alignment: .leading, spacing: 8) {
-                    // Creator Handle & Athlete Archetype Badge
-                    HStack(spacing: 8) {
-                        Text("@\(post.authorHandle)")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-
-                        HStack(spacing: 3) {
-                            Image(systemName: post.athleteType.iconName)
-                                .font(.system(size: 10, weight: .bold))
-                            Text(post.athleteType.shortTag)
-                                .font(.system(size: 9, weight: .black))
+                HStack(alignment: .bottom, spacing: 16) {
+                    // Left Column: Author, Workout Tag, Caption & Carousel Dots
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Multi-photo Dots indicator
+                        if post.mediaItems.count > 1 {
+                            HStack(spacing: 5) {
+                                ForEach(0..<post.mediaItems.count, id: \.self) { dotIdx in
+                                    Capsule()
+                                        .fill(dotIdx == currentSlideIndex ? AppTheme.primary : Color.white.opacity(0.4))
+                                        .frame(width: dotIdx == currentSlideIndex ? 18 : 5, height: 5)
+                                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentSlideIndex)
+                                }
+                            }
+                            .padding(.bottom, 4)
                         }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2.5)
-                        .background(post.athleteType.badgeColor.opacity(0.3))
-                        .foregroundColor(post.athleteType.badgeColor)
-                        .clipShape(Capsule())
 
+                        // Author Profile Row
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(AppTheme.surfaceRaised)
+                                .frame(width: 36, height: 36)
+                                .overlay(
+                                    Image(systemName: post.athleteType.iconName)
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(post.athleteType.badgeColor)
+                                )
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                HStack(spacing: 6) {
+                                    Text(post.authorName)
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+
+                                    Text(post.athleteType.rawValue.uppercased())
+                                        .font(.system(size: 8, weight: .black))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(post.athleteType.badgeColor)
+                                        .foregroundColor(.black)
+                                        .clipShape(Capsule())
+                                }
+
+                                Text("@\(post.authorHandle)")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.75))
+                            }
+                        }
+
+                        // Workout Tag
                         Text(post.workoutTag)
-                            .font(.system(size: 10, weight: .bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2.5)
-                            .background(AppTheme.primary.opacity(0.3))
+                            .font(.system(size: 11, weight: .black))
                             .foregroundColor(AppTheme.primary)
-                            .clipShape(Capsule())
+                            .tracking(1)
+
+                        // Caption
+                        Text(post.caption)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(3)
                     }
 
-                    // Caption
-                    Text(post.caption)
-                        .font(.system(size: 14))
-                        .foregroundColor(.white)
-                        .lineLimit(2)
+                    Spacer()
 
-                    // Audio Track Marquee with Platform Pill
-                    if let audio = post.audioTrack {
-                        HStack(spacing: 6) {
-                            Image(systemName: audio.platform.iconName)
-                                .font(.system(size: 11))
-                                .foregroundColor(audio.platform.brandColor)
+                    // Right Column: Vertical Actions (Like, Comment, Share)
+                    VStack(spacing: 20) {
+                        // Like Button
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                post.isLiked.toggle()
+                                post.likesCount += post.isLiked ? 1 : -1
+                            }
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: post.isLiked ? "heart.fill" : "heart")
+                                    .font(.system(size: 28, weight: .semibold))
+                                    .foregroundColor(post.isLiked ? AppTheme.accent : .white)
+                                Text("\(post.likesCount)")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .buttonStyle(.plain)
 
-                            Text("\(audio.title) · \(audio.artist)")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.white.opacity(0.9))
+                        // Comment Button
+                        Button {
+                            showCommentSheet = true
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: "bubble.right.fill")
+                                    .font(.system(size: 26, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Text("\(post.comments.count)")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .buttonStyle(.plain)
 
-                            Text("• \(audio.bpm) BPM")
-                                .font(AppTheme.monoFont)
-                                .foregroundColor(AppTheme.primary)
+                        // Share Button
+                        ShareLink(
+                            item: "Check out @\(post.authorHandle)'s workout on Solxce: \(post.caption)"
+                        ) {
+                            VStack(spacing: 4) {
+                                Image(systemName: "square.and.arrow.up.fill")
+                                    .font(.system(size: 24, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Text("Share")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
                         }
                     }
-
-                    // Video Scrubbing Bar
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(Color.white.opacity(0.3))
-                                .frame(height: 3)
-
-                            Capsule()
-                                .fill(AppTheme.primary)
-                                .frame(width: geo.size.width * videoProgress, height: 3)
-                        }
-                    }
-                    .frame(height: 3)
-                    .padding(.top, 4)
                 }
-                .padding(.horizontal, AppTheme.Spacing.screenMargin)
-                .padding(.bottom, 24)
-                .padding(.trailing, 70) // Avoid overlap with right action buttons
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
+            }
+
+            // Double Tap Heart Burst
+            if showHeartBurst {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 96))
+                    .foregroundColor(AppTheme.accent)
+                    .scaleEffect(1.2)
+                    .transition(.scale.combined(with: .opacity))
             }
         }
-        .onReceive(timer) { _ in
-            if isPlaying {
-                videoProgress += 0.015
-                if videoProgress >= 1.0 {
-                    videoProgress = 0.0
+        .onTapGesture(count: 2) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                showHeartBurst = true
+                if !post.isLiked {
+                    post.isLiked = true
+                    post.likesCount += 1
                 }
             }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                withAnimation { showHeartBurst = false }
+            }
         }
-        .sheet(isPresented: $showCommentsOverlay) {
-            PostCommentsSheet(post: $post, onAddComment: onAddComment)
-                .presentationDetents([.medium, .large])
+        .sheet(isPresented: $showCommentSheet) {
+            commentsDrawer
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    // MARK: - Full Screen Media Canvas
+    private func fullScreenMediaCanvas(for item: PostMediaItem) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: item.gradientColors.isEmpty ? post.gradientColors : item.gradientColors,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            VStack(spacing: 16) {
+                Circle()
+                    .fill(post.athleteType.badgeColor.opacity(0.18))
+                    .frame(width: 110, height: 110)
+                    .overlay(
+                        Image(systemName: item.iconName)
+                            .font(.system(size: 52, weight: .bold))
+                            .foregroundColor(post.athleteType.badgeColor)
+                    )
+
+                if let sub = item.subtitle, !sub.isEmpty {
+                    Text(sub)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white.opacity(0.9))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Color.black.opacity(0.5))
+                        .clipShape(Capsule())
+                }
+
+                if let sticker = post.textOverlay, !sticker.isEmpty {
+                    Text(sticker)
+                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                        .foregroundColor(AppTheme.primary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Color.black.opacity(0.75))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+            }
         }
     }
-}
 
-// MARK: - Post Comments Sheet
-struct PostCommentsSheet: View {
-    @Binding var post: AthletePost
-    var onAddComment: (PostComment) -> Void
-    @State private var commentInput: String = ""
-
-    var body: some View {
+    // MARK: - Comments Drawer Sheet
+    private var commentsDrawer: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 List {
                     ForEach(post.comments) { comment in
-                        HStack(alignment: .top, spacing: 10) {
-                            ZStack {
-                                Circle()
-                                    .fill(AppTheme.surfaceRaised)
-                                    .frame(width: 32, height: 32)
-
-                                if let type = comment.athleteType {
-                                    Image(systemName: type.iconName)
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundColor(type.badgeColor)
-                                } else {
-                                    Text(comment.author.prefix(1).uppercased())
-                                        .font(AppTheme.captionFont)
-                                        .foregroundColor(AppTheme.primary)
-                                }
-                            }
-
-                            VStack(alignment: .leading, spacing: 3) {
-                                HStack {
-                                    Text(comment.author)
-                                        .font(AppTheme.subheadlineFont)
-                                        .bold()
-                                        .foregroundColor(AppTheme.text)
-                                    Spacer()
-                                    Text(comment.timeAgo)
-                                        .font(AppTheme.captionFont)
-                                        .foregroundColor(AppTheme.textMuted)
-                                }
-                                Text(comment.text)
-                                    .font(AppTheme.bodyFont)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(comment.author)
+                                    .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(AppTheme.text)
+                                Spacer()
+                                Text(comment.timeAgo)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(AppTheme.textMuted)
                             }
+                            Text(comment.text)
+                                .font(.system(size: 13))
+                                .foregroundColor(AppTheme.textSecondary)
                         }
                         .listRowBackground(AppTheme.surface)
-                        .listRowSeparatorTint(AppTheme.hairline)
+                        .padding(.vertical, 4)
                     }
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
 
-                // Composer
-                HStack(spacing: 8) {
-                    TextField("Add a comment...", text: $commentInput)
+                // Add Comment Input
+                HStack(spacing: 10) {
+                    TextField("Add a comment...", text: $newCommentText)
+                        .font(AppTheme.bodyFont)
                         .padding(10)
-                        .background(AppTheme.field)
-                        .clipShape(Capsule())
-                        .foregroundColor(AppTheme.text)
+                        .background(AppTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
 
                     Button {
-                        guard !commentInput.isEmpty else { return }
-                        let newC = PostComment(
+                        guard !newCommentText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                        let comment = PostComment(
                             author: "you",
-                            athleteType: .hybrid,
-                            text: commentInput,
+                            athleteType: post.athleteType,
+                            text: newCommentText,
                             timeAgo: "Just now"
                         )
-                        onAddComment(newC)
-                        commentInput = ""
+                        onAddComment(comment)
+                        newCommentText = ""
                     } label: {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundColor(AppTheme.onPrimary)
-                            .frame(width: 36, height: 36)
-                            .background(AppTheme.primary)
-                            .clipShape(Circle())
+                        Text("Post")
+                            .font(AppTheme.headlineFont)
+                            .foregroundColor(AppTheme.primary)
                     }
-                    .disabled(commentInput.isEmpty)
                 }
-                .padding(10)
-                .background(AppTheme.surface)
+                .padding(16)
+                .background(AppTheme.surfaceRaised)
             }
             .background(AppTheme.ground.ignoresSafeArea())
             .navigationTitle("Comments (\(post.comments.count))")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { showCommentSheet = false }
+                        .foregroundColor(AppTheme.textSecondary)
+                }
+            }
         }
-        .preferredColorScheme(.dark)
+        .presentationDetents([.medium, .large])
     }
 }
