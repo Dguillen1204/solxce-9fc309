@@ -69,7 +69,6 @@ public struct AthletePost: Identifiable {
         self.comments = comments
     }
 }
-}
 
 public struct PostComment: Identifiable {
     public let id = UUID()
