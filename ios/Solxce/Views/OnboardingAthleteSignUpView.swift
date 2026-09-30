@@ -1,6 +1,7 @@
 // Views/OnboardingAthleteSignUpView.swift
 import SwiftUI
 import SwiftData
+import PhotosUI
 
 struct OnboardingAthleteSignUpView: View {
     @Environment(\.modelContext) private var modelContext
@@ -14,6 +15,9 @@ struct OnboardingAthleteSignUpView: View {
     @State private var handle: String = ""
     @State private var bio: String = ""
     @State private var selectedAvatarIcon: String = "bolt.shield.fill"
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var profileImageData: Data? = nil
+    @State private var isPublicProfile: Bool = true
 
     let avatarChoices = [
         "bolt.shield.fill",
@@ -57,6 +61,16 @@ struct OnboardingAthleteSignUpView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onChange(of: selectedPhotoItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self) {
+                    await MainActor.run {
+                        profileImageData = data
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Top Progress Bar
@@ -122,36 +136,96 @@ struct OnboardingAthleteSignUpView: View {
                 }
                 .padding(.top, 16)
 
-                // Avatar Choice
-                VStack(spacing: 12) {
-                    Text("CHOOSE AVATAR ICON")
+                // Avatar & Profile Photo Choice
+                VStack(spacing: 16) {
+                    Text("PROFILE PICTURE & AVATAR")
                         .font(AppTheme.eyebrowFont)
                         .foregroundColor(AppTheme.textSecondary)
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(avatarChoices, id: \.self) { icon in
-                                Button {
-                                    selectedAvatarIcon = icon
-                                } label: {
-                                    ZStack {
-                                        Circle()
-                                            .fill(selectedAvatarIcon == icon ? AppTheme.primary.opacity(0.2) : AppTheme.surfaceRaised)
-                                            .frame(width: 54, height: 54)
-                                            .overlay(
-                                                Circle()
-                                                    .stroke(selectedAvatarIcon == icon ? AppTheme.primary : AppTheme.hairline, lineWidth: selectedAvatarIcon == icon ? 2 : 1)
-                                            )
+                    // Large Avatar with Photo Picker
+                    VStack(spacing: 10) {
+                        AthleteAvatarView(
+                            imageData: profileImageData,
+                            symbolFallback: selectedAvatarIcon,
+                            initials: fullName.isEmpty ? "A" : fullName,
+                            ringColor: selectedAthleteType.badgeColor,
+                            size: 88,
+                            showCameraBadge: true,
+                            isPublic: isPublicProfile
+                        )
 
-                                        Image(systemName: icon)
-                                            .font(.system(size: 22, weight: .semibold))
-                                            .foregroundColor(selectedAvatarIcon == icon ? AppTheme.primary : AppTheme.textSecondary)
-                                    }
-                                }
-                                .buttonStyle(ScaleBounceButtonStyle())
+                        PhotosPicker(
+                            selection: $selectedPhotoItem,
+                            matching: .images,
+                            photoLibrary: .shared()
+                        ) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "photo.badge.plus")
+                                Text(profileImageData == nil ? "Upload Profile Picture" : "Change Picture")
                             }
+                            .font(AppTheme.eyebrowFont)
+                            .foregroundColor(AppTheme.primary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(AppTheme.primary.opacity(0.12))
+                            .clipShape(Capsule())
                         }
-                        .padding(.horizontal, 4)
+                    }
+
+                    // Public Profile Toggle
+                    Toggle(isOn: $isPublicProfile) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 5) {
+                                Image(systemName: "globe.americas.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(AppTheme.primary)
+                                Text("Make Profile & Photo Public")
+                                    .font(AppTheme.headlineFont)
+                                    .foregroundColor(AppTheme.text)
+                            }
+                            Text("Visible in community feed and athlete leaderboards.")
+                                .font(.system(size: 11))
+                                .foregroundColor(AppTheme.textSecondary)
+                        }
+                    }
+                    .tint(AppTheme.primary)
+                    .padding(.top, 4)
+
+                    Divider()
+                        .background(AppTheme.hairline)
+
+                    // Preset Athlete Symbols
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("OR CHOOSE ATHLETE ICON")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(AppTheme.textSecondary)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(avatarChoices, id: \.self) { icon in
+                                    Button {
+                                        selectedAvatarIcon = icon
+                                        profileImageData = nil
+                                    } label: {
+                                        ZStack {
+                                            Circle()
+                                                .fill(selectedAvatarIcon == icon && profileImageData == nil ? AppTheme.primary.opacity(0.2) : AppTheme.surfaceRaised)
+                                                .frame(width: 48, height: 48)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(selectedAvatarIcon == icon && profileImageData == nil ? AppTheme.primary : AppTheme.hairline, lineWidth: selectedAvatarIcon == icon && profileImageData == nil ? 2 : 1)
+                                                )
+
+                                            Image(systemName: icon)
+                                                .font(.system(size: 18, weight: .semibold))
+                                                .foregroundColor(selectedAvatarIcon == icon && profileImageData == nil ? AppTheme.primary : AppTheme.textSecondary)
+                                        }
+                                    }
+                                    .buttonStyle(ScaleBounceButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal, 4)
+                        }
                     }
                 }
                 .padding(AppTheme.Spacing.md)
@@ -514,13 +588,17 @@ struct OnboardingAthleteSignUpView: View {
             existing.athleteType = selectedAthleteType
             existing.bio = finalBio
             existing.avatarSymbol = selectedAvatarIcon
+            existing.profileImageData = profileImageData
+            existing.isPublicProfile = isPublicProfile
         } else {
             let newProfile = UserProfile(
                 fullName: finalName,
                 handle: finalHandle,
                 athleteType: selectedAthleteType,
                 bio: finalBio,
-                avatarSymbol: selectedAvatarIcon
+                avatarSymbol: selectedAvatarIcon,
+                profileImageData: profileImageData,
+                isPublicProfile: isPublicProfile
             )
             modelContext.insert(newProfile)
         }
