@@ -46,6 +46,7 @@ public struct PostMediaItem: Identifiable, Hashable, Codable {
             Color(hex: hex)
         }
     }
+}
 
 // MARK: - Streaming Platform Source
 public enum MusicService: String, Codable, CaseIterable, Identifiable {
