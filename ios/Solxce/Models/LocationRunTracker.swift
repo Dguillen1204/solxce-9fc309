@@ -3,8 +3,12 @@ import Foundation
 import CoreLocation
 import MapKit
 import Combine
+import AVFoundation
+import MediaPlayer
 
 /// Real-time GPS location and running tracker inspired by Strava & Nike Run Club
+/// Fully configured for background tracking while locked / screen turned off,
+/// and ducking/mixing smoothly alongside active music playback (Apple Music, Spotify).
 @MainActor
 final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
@@ -22,9 +26,18 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
     @Published var currentSpeedMps: Double = 0.0 // meters per second
     @Published var splits: [RunSplit] = [] // Mile splits
     
+    // Background & Lock Screen Settings
+    @Published var voiceAudioCuesEnabled: Bool = true
+    @Published var isBackgroundTrackingActive: Bool = false
+    @Published var lastVoiceCueMessage: String?
+    
     private var lastLocation: CLLocation?
     private var timerSubscription: AnyCancellable?
     private var simulatedTimerSubscription: AnyCancellable?
+    
+    // Audio Speech Synthesizer for interval/mile audio cues while music is playing
+    private let speechSynthesizer = AVSpeechSynthesizer()
+    private var lastAnnouncedMile: Int = 0
     
     // Fallback simulation when running inside simulator or GPS is still acquiring
     @Published var isSimulatedMovement: Bool = false
@@ -36,11 +49,96 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         locationManager.distanceFilter = 3.0 // Update every 3 meters
         locationManager.activityType = .fitness
+        
+        // Background location updates configuration
+        locationManager.pausesLocationUpdatesAutomatically = false
+        
+        #if os(iOS)
+        // Enable background location execution when supported
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.showsBackgroundLocationIndicator = true
+        #endif
+        
         self.authorizationStatus = locationManager.authorizationStatus
     }
     
     func requestPermission() {
         locationManager.requestWhenInUseAuthorization()
+        // If already authorized when in use, request always authorization for seamless background tracking
+        if locationManager.authorizationStatus == .authorizedWhenInUse {
+            locationManager.requestAlwaysAuthorization()
+        }
+    }
+    
+    // MARK: - Audio Session Configuration for Music Coexistence
+    /// Configures the shared AVAudioSession with .playback and .mixWithOthers / .duckOthers
+    /// so the run tracker can play audio cues and continue background execution
+    /// without stopping or killing the user's Spotify or Apple Music stream.
+    private func setupAudioSessionForBackgroundTracking() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            // .playback category allows background execution
+            // .mixWithOthers allows Spotify / Apple Music to play concurrently
+            // .duckOthers subtly lowers music volume when the run tracker speaks voice metrics
+            try session.setCategory(
+                .playback,
+                mode: .spokenAudio,
+                options: [.mixWithOthers, .duckOthers]
+            )
+            try session.setActive(true, options: [])
+            isBackgroundTrackingActive = true
+        } catch {
+            // Audio session setup failure handled gracefully
+            isBackgroundTrackingActive = false
+        }
+    }
+    
+    private func deactivateAudioSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setActive(false, options: [.notifyOthersOnDeactivation])
+            isBackgroundTrackingActive = false
+        } catch {
+            // Handled gracefully
+        }
+    }
+    
+    // MARK: - Lock Screen & Now Playing Info Center
+    private func updateNowPlayingLockScreenMetrics() {
+        let center = MPNowPlayingInfoCenter.default()
+        var nowPlayingInfo: [String: Any] = [:]
+        
+        nowPlayingInfo[MPMediaItemPropertyTitle] = String(format: "%.2f mi · %@ · %@", totalDistanceMiles, formattedElapsedTime, averagePaceFormatted)
+        nowPlayingInfo[MPMediaItemPropertyArtist] = "Solxce GPS Live Tracker"
+        nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = isPaused ? "Paused" : "Active Run · Tracking in Background"
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = Double(elapsedSeconds)
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = (isTracking && !isPaused) ? 1.0 : 0.0
+        
+        center.nowPlayingInfo = nowPlayingInfo
+    }
+    
+    private func clearNowPlayingInfo() {
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+    }
+    
+    // MARK: - Voice Audio Coaching Cues
+    func speakCue(_ text: String) {
+        guard voiceAudioCuesEnabled else { return }
+        
+        Task { @MainActor in
+            self.lastVoiceCueMessage = text
+        }
+        
+        // Ensure audio session is primed for speaking over music
+        setupAudioSessionForBackgroundTracking()
+        
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
+        utterance.pitchMultiplier = 1.05
+        utterance.volume = 1.0
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        
+        speechSynthesizer.speak(utterance)
     }
     
     // MARK: - Live Metric Calculations
@@ -96,6 +194,9 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
     func startRun(useSimulatorFallbackIfNoGps: Bool = true) {
         requestPermission()
         
+        // Prime audio session for background execution and music compatibility
+        setupAudioSessionForBackgroundTracking()
+        
         isTracking = true
         isPaused = false
         elapsedSeconds = 0
@@ -103,8 +204,15 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
         routeCoordinates.removeAll()
         splits.removeAll()
         lastLocation = nil
+        lastAnnouncedMile = 0
         
         locationManager.startUpdatingLocation()
+        
+        // Audio cue on start
+        speakCue("Starting outdoor run. GPS locked.")
+        
+        // Update lock screen controls
+        updateNowPlayingLockScreenMetrics()
         
         // Timer for elapsed seconds
         timerSubscription = Timer.publish(every: 1.0, on: .main, in: .common)
@@ -113,6 +221,9 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
                 guard let self = self, self.isTracking, !self.isPaused else { return }
                 self.elapsedSeconds += 1
                 self.checkMileSplits()
+                if self.elapsedSeconds % 5 == 0 {
+                    self.updateNowPlayingLockScreenMetrics()
+                }
             }
             
         // If in preview / simulator or no GPS yet after starting, enable smooth route simulation fallback
@@ -133,14 +244,19 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
         isPaused = true
         locationManager.stopUpdatingLocation()
         currentSpeedMps = 0.0
+        updateNowPlayingLockScreenMetrics()
+        speakCue("Run paused.")
     }
     
     func resumeRun() {
         isPaused = false
+        setupAudioSessionForBackgroundTracking()
         locationManager.startUpdatingLocation()
         if isSimulatedMovement {
             resumeSimulation()
         }
+        updateNowPlayingLockScreenMetrics()
+        speakCue("Resuming run.")
     }
     
     func stopAndFinalizeRun() -> (distanceMiles: Double, durationSecs: Int, calories: Int, avgPace: String, route: [CLLocationCoordinate2D]) {
@@ -152,11 +268,16 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
         simulatedTimerSubscription?.cancel()
         simulatedTimerSubscription = nil
         
+        clearNowPlayingInfo()
+        deactivateAudioSession()
+        
         let finalDistance = max(0.01, totalDistanceMiles)
         let finalDuration = max(1, elapsedSeconds)
         let finalCals = estimatedCaloriesBurned
         let finalPace = averagePaceFormatted
         let finalRoute = routeCoordinates
+        
+        speakCue(String(format: "Workout complete. Total distance %.2f miles at %@ average pace. Great work!", finalDistance, finalPace))
         
         return (finalDistance, finalDuration, finalCals, finalPace, finalRoute)
     }
@@ -175,6 +296,9 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
         routeCoordinates.removeAll()
         lastLocation = nil
         isSimulatedMovement = false
+        lastAnnouncedMile = 0
+        clearNowPlayingInfo()
+        deactivateAudioSession()
     }
     
     // MARK: - Simulation Mode (Treadmill / Indoors / Simulator Testing)
@@ -247,6 +371,13 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
                 formattedPace: formatted
             )
             splits.append(split)
+            
+            // Announce voice split over music ducking
+            if currentCompletedMiles > lastAnnouncedMile {
+                lastAnnouncedMile = currentCompletedMiles
+                let announcement = String(format: "Mile %d completed. Split pace %@. Total distance %.2f miles.", currentCompletedMiles, formatted, totalDistanceMiles)
+                speakCue(announcement)
+            }
         }
     }
     
@@ -265,14 +396,14 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
         
         Task { @MainActor in
             // Filter inaccurate points
-            guard location.horizontalAccuracy >= 0 && location.horizontalAccuracy <= 35 else { return }
+            guard location.horizontalAccuracy >= 0 && location.horizontalAccuracy <= 40 else { return }
             
             self.currentCoordinate = location.coordinate
             
             if self.isTracking && !self.isPaused && !self.isSimulatedMovement {
                 if let last = self.lastLocation {
                     let deltaMeters = location.distance(from: last)
-                    if deltaMeters > 1.5 { // Only record significant steps
+                    if deltaMeters > 1.2 { // Accurate step threshold
                         self.totalDistanceMeters += deltaMeters
                         self.routeCoordinates.append(location.coordinate)
                         

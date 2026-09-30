@@ -248,6 +248,42 @@ struct RunLogView: View {
                 }
             }
 
+            // Background & Music Audio Status Indicator
+            if tracker.isTracking {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.shield.fill")
+                        .foregroundStyle(AppTheme.primary)
+                        .font(.system(size: 13))
+                    
+                    Text("Background GPS & Lock Screen Active")
+                        .font(AppTheme.captionFont)
+                        .foregroundStyle(AppTheme.textSecondary)
+
+                    Spacer()
+
+                    // Audio coaching / music mixing toggle
+                    Button(action: {
+                        tracker.voiceAudioCuesEnabled.toggle()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: tracker.voiceAudioCuesEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                                .font(.system(size: 11))
+                            Text(tracker.voiceAudioCuesEnabled ? "Audio Cues On" : "Muted")
+                                .font(AppTheme.eyebrowFont)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(tracker.voiceAudioCuesEnabled ? AppTheme.primary.opacity(0.15) : AppTheme.field)
+                        .foregroundStyle(tracker.voiceAudioCuesEnabled ? AppTheme.primary : AppTheme.textMuted)
+                        .clipShape(Capsule())
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(AppTheme.field.opacity(0.7))
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
+            }
+
             // Big Live Timer Display
             VStack(spacing: 2) {
                 Text(tracker.formattedElapsedTime)
