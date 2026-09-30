@@ -2,6 +2,47 @@
 import SwiftUI
 import UIKit
 
+/// Theme color accent selection persisted in AppStorage
+public enum AppColorPalette: String, CaseIterable, Identifiable {
+    case crimson = "crimson"
+    case volt = "volt"
+    case cyan = "cyan"
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .crimson: return "Forge Crimson"
+        case .volt: return "Apex Volt"
+        case .cyan: return "Apex Cyan"
+        }
+    }
+
+    public var subtitle: String {
+        switch self {
+        case .crimson: return "Original Luxury Crimson (#EF4444)"
+        case .volt: return "Electric Neon Volt (#CCFF00)"
+        case .cyan: return "Luminous Ice Cyan (#38BDF8)"
+        }
+    }
+
+    public var accentColor: Color {
+        switch self {
+        case .crimson: return Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444
+        case .volt: return Color(red: 0.800, green: 1.000, blue: 0.000) // #CCFF00
+        case .cyan: return Color(red: 0.220, green: 0.741, blue: 0.973) // #38BDF8
+        }
+    }
+
+    public var accentHex: String {
+        switch self {
+        case .crimson: return "#EF4444"
+        case .volt: return "#CCFF00"
+        case .cyan: return "#38BDF8"
+        }
+    }
+}
+
 /// Appearance selection setting persisted in AppStorage
 public enum AppAppearance: String, CaseIterable, Identifiable {
     case system = "system"
@@ -35,8 +76,9 @@ public enum AppAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// Apex Volt & Neon Lime Design System tokens for Solxce (Whoop / Apex Telemetry aesthetic)
-/// Pitch-black obsidian canvas, crisp specular white primary, electric kinetic volt accents (#CCFF00 / #A3E635), and deep charcoal surfaces.
+/// Original Design System tokens for Solxce (Equinox / Luxury Obsidian & Forge Crimson aesthetic)
+/// Pitch-black obsidian canvas (#000000), crisp specular white primary (#FFFFFF),
+/// iconic Forge Crimson accent (#EF4444), and refined obsidian surfaces (#121212).
 public enum AppTheme {
     // MARK: - Adaptive Color Helper
     public static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
@@ -45,25 +87,26 @@ public enum AppTheme {
         })
     }
 
-    // MARK: - Core Colors (Apex Volt & Neon Lime)
+    // MARK: - Core Colors (Original Forge Crimson & Obsidian Luxury)
     /// Primary Specular White (#FFFFFF)
     public static let primary = dynamicColor(
         light: UIColor(red: 0.05, green: 0.05, blue: 0.06, alpha: 1.0),
         dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // #FFFFFF
     )
 
-    /// Apex Volt accent (#CCFF00 / Electric Volt)
+    /// Original Forge Crimson accent (#EF4444)
     public static let accent = dynamicColor(
-        light: UIColor(red: 0.52, green: 0.72, blue: 0.0, alpha: 1.0), // Deep volt for light mode
-        dark: UIColor(red: 0.800, green: 1.000, blue: 0.000, alpha: 1.0) // #CCFF00 Hyper Volt
+        light: UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1.0),
+        dark: UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) // #EF4444 Crimson
     )
 
-    /// Electric Volt & Platinum highlight tokens
+    /// Named accent tokens
+    public static let crimson = Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444 (Original Signature)
     public static let volt = Color(red: 0.800, green: 1.000, blue: 0.000) // #CCFF00
     public static let neonLime = Color(red: 0.639, green: 0.902, blue: 0.208) // #A3E635
-    public static let crimson = Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444 (for zone alerts)
+    public static let cyan = Color(red: 0.220, green: 0.741, blue: 0.973) // #38BDF8
     public static let platinum = Color(red: 0.886, green: 0.910, blue: 0.941) // #E2E8F0
-    public static let primaryVolt = volt // Compatibility alias
+    public static let primaryVolt = crimson // Compatibility alias pointing to active accent
 
     /// Base canvas background: True Black (#000000)
     public static let ground = dynamicColor(
@@ -89,7 +132,7 @@ public enum AppTheme {
         dark: UIColor(red: 0.133, green: 0.133, blue: 0.141, alpha: 1.0)
     )
 
-    /// Hairline borders (Specular platinum / volt shimmer)
+    /// Hairline borders (Specular platinum / subtle obsidian shimmer)
     public static let hairline = dynamicColor(
         light: UIColor(white: 0.0, alpha: 0.08),
         dark: UIColor(white: 1.0, alpha: 0.12)
@@ -119,10 +162,10 @@ public enum AppTheme {
         dark: UIColor.black
     )
 
-    // MARK: - Telemetry & Macro Semantics (Apex Volt / Telemetry Ramp)
+    // MARK: - Telemetry & Macro Semantics
     public static let caloriesColor = dynamicColor(
-        light: UIColor(red: 0.52, green: 0.72, blue: 0.0, alpha: 1.0),
-        dark: UIColor(red: 0.800, green: 1.000, blue: 0.000, alpha: 1.0) // Hyper Volt #CCFF00
+        light: UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1.0),
+        dark: UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) // #EF4444 Crimson
     )
     public static let proteinColor = dynamicColor(
         light: UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0),
@@ -130,7 +173,7 @@ public enum AppTheme {
     )
     public static let carbsColor = dynamicColor(
         light: UIColor(red: 0.35, green: 0.37, blue: 0.42, alpha: 1.0),
-        dark: UIColor(red: 0.639, green: 0.902, blue: 0.208, alpha: 1.0) // Neon Lime #A3E635
+        dark: UIColor(red: 0.98, green: 0.60, blue: 0.20, alpha: 1.0) // Amber / Sunset
     )
     public static let fatColor = dynamicColor(
         light: UIColor(red: 0.55, green: 0.58, blue: 0.65, alpha: 1.0),
