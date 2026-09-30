@@ -35,8 +35,8 @@ public enum AppAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// Monochrome Platinum & Onyx Design System tokens for Solxce (Whoop / Apex Telemetry Luxury aesthetic)
-/// Pitch-black obsidian canvas, crisp specular white primary, platinum silver metallic accents, and deep charcoal surfaces.
+/// Forge Crimson & Carbon Design System tokens for Solxce (Whoop / Apex Telemetry aesthetic)
+/// Pitch-black obsidian canvas, crisp specular white primary, intense forge crimson accents (#EF4444), and deep charcoal surfaces.
 public enum AppTheme {
     // MARK: - Adaptive Color Helper
     public static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
@@ -45,22 +45,23 @@ public enum AppTheme {
         })
     }
 
-    // MARK: - Core Colors (Monochrome Platinum & Onyx)
+    // MARK: - Core Colors (Forge Crimson & Carbon)
     /// Primary Specular White (#FFFFFF)
     public static let primary = dynamicColor(
         light: UIColor(red: 0.05, green: 0.05, blue: 0.06, alpha: 1.0),
         dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // #FFFFFF
     )
 
-    /// Platinum Silver metallic accent (#E2E8F0)
+    /// Forge Crimson accent (#EF4444)
     public static let accent = dynamicColor(
-        light: UIColor(red: 0.25, green: 0.27, blue: 0.30, alpha: 1.0),
-        dark: UIColor(red: 0.886, green: 0.910, blue: 0.941, alpha: 1.0) // #E2E8F0
+        light: UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1.0),
+        dark: UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) // #EF4444
     )
 
-    /// Pure Platinum highlight token
+    /// Intense Crimson highlight token
+    public static let crimson = Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444
     public static let platinum = Color(red: 0.886, green: 0.910, blue: 0.941) // #E2E8F0
-    public static let primaryVolt = platinum // Compatibility alias mapping to platinum highlight
+    public static let primaryVolt = crimson // Compatibility alias mapping to crimson highlight
 
     /// Base canvas background: True Black (#000000)
     public static let ground = dynamicColor(
@@ -86,7 +87,7 @@ public enum AppTheme {
         dark: UIColor(red: 0.133, green: 0.133, blue: 0.141, alpha: 1.0)
     )
 
-    /// Hairline borders (Specular platinum shimmer)
+    /// Hairline borders (Specular platinum / crimson shimmer)
     public static let hairline = dynamicColor(
         light: UIColor(white: 0.0, alpha: 0.08),
         dark: UIColor(white: 1.0, alpha: 0.12)
@@ -116,18 +117,18 @@ public enum AppTheme {
         dark: UIColor.black
     )
 
-    // MARK: - Telemetry & Macro Semantics (Monochrome / High Contrast Telemetry)
+    // MARK: - Telemetry & Macro Semantics (Forge Crimson / Telemetry Ramp)
     public static let caloriesColor = dynamicColor(
+        light: UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1.0),
+        dark: UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) // Forge Crimson
+    )
+    public static let proteinColor = dynamicColor(
         light: UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0),
         dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // Specular White
     )
-    public static let proteinColor = dynamicColor(
-        light: UIColor(red: 0.35, green: 0.37, blue: 0.42, alpha: 1.0),
-        dark: UIColor(red: 0.886, green: 0.910, blue: 0.941, alpha: 1.0) // Platinum
-    )
     public static let carbsColor = dynamicColor(
-        light: UIColor(red: 0.45, green: 0.48, blue: 0.55, alpha: 1.0),
-        dark: UIColor(red: 0.65, green: 0.70, blue: 0.78, alpha: 1.0) // Silver Slate
+        light: UIColor(red: 0.35, green: 0.37, blue: 0.42, alpha: 1.0),
+        dark: UIColor(red: 0.886, green: 0.910, blue: 0.941, alpha: 1.0) // Platinum Silver
     )
     public static let fatColor = dynamicColor(
         light: UIColor(red: 0.55, green: 0.58, blue: 0.65, alpha: 1.0),
