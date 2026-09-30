@@ -63,131 +63,165 @@ struct RunLogView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: AppTheme.Spacing.md) {
-                    // Segmented Mode Selector
-                    Picker("Tracking Mode", selection: $mode) {
-                        ForEach(RunTrackingMode.allCases) { item in
-                            Text(item.rawValue).tag(item)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.top, AppTheme.Spacing.xs)
-
-                    if mode == .live {
-                        liveGpsTrackerView
-                    } else {
-                        manualEntryCard
-                    }
-
-                    // Workout Details / Title & Notes
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
-                        Text("RUN DETAILS")
-                            .font(AppTheme.eyebrowFont)
-                            .tracking(1.5)
-                            .foregroundStyle(AppTheme.textSecondary)
-
-                        TextField("Run Name (e.g., Morning 5K, Strava Segment)", text: $runTitle)
-                            .font(AppTheme.bodyFont)
-                            .padding(AppTheme.Spacing.sm)
-                            .background(AppTheme.field)
-                            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
-                            .foregroundStyle(AppTheme.text)
-
-                        TextField("Notes (shoes, route conditions, elevation)", text: $notes)
-                            .font(AppTheme.bodyFont)
-                            .padding(AppTheme.Spacing.sm)
-                            .background(AppTheme.field)
-                            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
-                            .foregroundStyle(AppTheme.text)
-                    }
-                    .padding(AppTheme.Spacing.md)
-                    .background(AppTheme.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
-
-                    // Past Runs Log with Route Maps
-                    pastRunsSection
+            mainScrollView
+                .background(AppTheme.ground.ignoresSafeArea())
+                .navigationTitle("Track Run")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { toolbarContent }
+                .alert("Finish Run?", isPresented: $showFinishConfirmation) {
+                    finishAlertButtons
+                } message: {
+                    Text(finishAlertMessage)
                 }
-                .padding(.horizontal, AppTheme.Spacing.screenMargin)
-                .padding(.bottom, AppTheme.Spacing.xxl)
+                .sheet(item: $selectedHistoricalRun) { run in
+                    RunRouteDetailSheet(run: run)
+                }
+                .sheet(isPresented: $showingWatchHub) {
+                    AppleWatchHubView()
+                }
+                .onChange(of: tracker.isTracking) { _, isTracking in
+                    handleTrackingStateChange(isTracking: isTracking)
+                }
+                .onChange(of: tracker.elapsedSeconds) { _, seconds in
+                    handleElapsedSecondsChange(seconds: seconds)
+                }
+        }
+    }
+
+    private var mainScrollView: some View {
+        ScrollView {
+            VStack(spacing: AppTheme.Spacing.md) {
+                // Segmented Mode Selector
+                Picker("Tracking Mode", selection: $mode) {
+                    ForEach(RunTrackingMode.allCases) { item in
+                        Text(item.rawValue).tag(item)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.top, AppTheme.Spacing.xs)
+
+                if mode == .live {
+                    liveGpsTrackerView
+                } else {
+                    manualEntryCard
+                }
+
+                // Workout Details / Title & Notes
+                workoutDetailsCard
+
+                // Past Runs Log with Route Maps
+                pastRunsSection
             }
-            .background(AppTheme.ground.ignoresSafeArea())
-            .navigationTitle("Track Run")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        tracker.reset()
-                        dismiss()
-                    }
-                    .foregroundStyle(AppTheme.textSecondary)
-                }
+            .padding(.horizontal, AppTheme.Spacing.screenMargin)
+            .padding(.bottom, AppTheme.Spacing.xxl)
+        }
+    }
 
-                if mode == .manual {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save Run") {
-                            saveManualRun()
-                            dismiss()
-                        }
-                        .font(AppTheme.headlineFont)
-                        .foregroundStyle(AppTheme.primary)
-                    }
-                }
+    private var workoutDetailsCard: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+            Text("RUN DETAILS")
+                .font(AppTheme.eyebrowFont)
+                .tracking(1.5)
+                .foregroundStyle(AppTheme.textSecondary)
+
+            TextField("Run Name (e.g., Morning 5K, Strava Segment)", text: $runTitle)
+                .font(AppTheme.bodyFont)
+                .padding(AppTheme.Spacing.sm)
+                .background(AppTheme.field)
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
+                .foregroundStyle(AppTheme.text)
+
+            TextField("Notes (shoes, route conditions, elevation)", text: $notes)
+                .font(AppTheme.bodyFont)
+                .padding(AppTheme.Spacing.sm)
+                .background(AppTheme.field)
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.tag))
+                .foregroundStyle(AppTheme.text)
+        }
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Close") {
+                tracker.reset()
+                dismiss()
             }
-            .alert("Finish Run?", isPresented: $showFinishConfirmation) {
-                Button("Save & Record") {
-                    saveLiveRun()
+            .foregroundStyle(AppTheme.textSecondary)
+        }
+
+        if mode == .manual {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save Run") {
+                    saveManualRun()
                     dismiss()
                 }
-                Button("Discard", role: .destructive) {
-                    tracker.reset()
-                }
-                Button("Keep Running", role: .cancel) {
-                    tracker.resumeRun()
-                }
-            } message: {
-                Text(finishAlertMessage)
-            }
-            .sheet(item: $selectedHistoricalRun) { run in
-                RunRouteDetailSheet(run: run)
-            }
-            .sheet(isPresented: $showingWatchHub) {
-                AppleWatchHubView()
-            }
-            .onChange(of: tracker.isTracking) { _, isTracking in
-                if isTracking {
-                    watchManager.sendWorkoutStateToWatch(
-                        isActive: true,
-                        title: runTitle,
-                        elapsedSeconds: tracker.elapsedSeconds,
-                        heartRate: watchManager.liveTelemetry.heartRateBpm > 0 ? watchManager.liveTelemetry.heartRateBpm : 148.0,
-                        calories: tracker.caloriesBurned,
-                        pace: tracker.currentPaceFormatted
-                    )
-                } else if !tracker.isPaused {
-                    watchManager.sendWorkoutStateToWatch(
-                        isActive: false,
-                        title: runTitle,
-                        elapsedSeconds: tracker.elapsedSeconds,
-                        heartRate: 0,
-                        calories: tracker.caloriesBurned,
-                        pace: "--'--\""
-                    )
-                }
-            }
-            .onChange(of: tracker.elapsedSeconds) { _, seconds in
-                if tracker.isTracking && !tracker.isPaused && seconds % 2 == 0 {
-                    watchManager.sendWorkoutStateToWatch(
-                        isActive: true,
-                        title: runTitle,
-                        elapsedSeconds: seconds,
-                        heartRate: watchManager.liveTelemetry.heartRateBpm > 0 ? watchManager.liveTelemetry.heartRateBpm : (healthKit.currentHeartRateBpm > 0 ? healthKit.currentHeartRateBpm : 152.0),
-                        calories: tracker.caloriesBurned,
-                        pace: tracker.currentPaceFormatted
-                    )
-                }
+                .font(AppTheme.headlineFont)
+                .foregroundStyle(AppTheme.primary)
             }
         }
+    }
+
+    @ViewBuilder
+    private var finishAlertButtons: some View {
+        Button("Save & Record") {
+            saveLiveRun()
+            dismiss()
+        }
+        Button("Discard", role: .destructive) {
+            tracker.reset()
+        }
+        Button("Keep Running", role: .cancel) {
+            tracker.resumeRun()
+        }
+    }
+
+    private func handleTrackingStateChange(isTracking: Bool) {
+        if isTracking {
+            let hr: Double = watchManager.liveTelemetry.heartRateBpm > 0 ? watchManager.liveTelemetry.heartRateBpm : 148.0
+            watchManager.sendWorkoutStateToWatch(
+                isActive: true,
+                title: runTitle,
+                elapsedSeconds: tracker.elapsedSeconds,
+                heartRate: hr,
+                calories: tracker.caloriesBurned,
+                pace: tracker.currentPaceFormatted
+            )
+        } else if !tracker.isPaused {
+            watchManager.sendWorkoutStateToWatch(
+                isActive: false,
+                title: runTitle,
+                elapsedSeconds: tracker.elapsedSeconds,
+                heartRate: 0,
+                calories: tracker.caloriesBurned,
+                pace: "--'--\""
+            )
+        }
+    }
+
+    private func handleElapsedSecondsChange(seconds: Int) {
+        guard tracker.isTracking && !tracker.isPaused && seconds % 2 == 0 else { return }
+        let currentTelemetryHr = watchManager.liveTelemetry.heartRateBpm
+        let healthKitHr = healthKit.currentHeartRateBpm
+        let hr: Double
+        if currentTelemetryHr > 0 {
+            hr = currentTelemetryHr
+        } else if healthKitHr > 0 {
+            hr = healthKitHr
+        } else {
+            hr = 152.0
+        }
+        watchManager.sendWorkoutStateToWatch(
+            isActive: true,
+            title: runTitle,
+            elapsedSeconds: seconds,
+            heartRate: hr,
+            calories: tracker.caloriesBurned,
+            pace: tracker.currentPaceFormatted
+        )
     }
 
     // MARK: - Live GPS Tracker View (Nike / Strava style)
