@@ -7,6 +7,8 @@ struct CreateMediaPostSheet: View {
     var authorName: String
     var authorHandle: String
     var athleteType: AthleteType
+    var authorProfileImageData: Data? = nil
+    var isPublicAuthor: Bool = true
     var onPost: (AthletePost) -> Void
 
     // Form State
@@ -566,6 +568,8 @@ struct CreateMediaPostSheet: View {
             authorName: authorName,
             authorHandle: authorHandle,
             athleteType: athleteType,
+            authorProfileImageData: authorProfileImageData,
+            isPublicAuthor: isPublicAuthor,
             timeAgo: "Just now",
             workoutTag: workoutFocus.isEmpty ? "WORKOUT LOG" : workoutFocus.uppercased(),
             workoutStats: workoutStats,
