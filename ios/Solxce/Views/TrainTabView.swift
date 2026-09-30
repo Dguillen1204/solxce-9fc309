@@ -108,80 +108,102 @@ struct TrainTabView: View {
 
     // MARK: - Action Launchers (Strength + Run)
     private var actionLaunchers: some View {
-        HStack(spacing: AppTheme.Spacing.sm) {
-            // Start Strength Workout
+        VStack(spacing: AppTheme.Spacing.sm) {
+            // Log Lift - Top Horizontal Tab Button
             Button {
                 showingWorkoutLogger = true
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: 14) {
                     ZStack {
                         Circle()
                             .fill(AppTheme.accent.opacity(0.18))
-                            .frame(width: 44, height: 44)
+                            .frame(width: 48, height: 48)
                         Image(systemName: "dumbbell.fill")
-                            .font(.system(size: 18, weight: .black))
+                            .font(.system(size: 20, weight: .black))
                             .foregroundStyle(AppTheme.accent)
                     }
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 3) {
                         Text("LOG LIFT")
-                            .font(AppTheme.eyebrowFont)
-                            .tracking(1.0)
+                            .font(AppTheme.headlineFont.weight(.black))
+                            .tracking(1.2)
                             .foregroundStyle(AppTheme.accent)
-                        Text("Strength Session")
-                            .font(AppTheme.headlineFont)
-                            .foregroundStyle(AppTheme.text)
+                        Text("Strength, Hypertrophy & Progressive Overload")
+                            .font(AppTheme.captionFont)
+                            .foregroundStyle(AppTheme.textSecondary)
+                            .lineLimit(1)
                     }
+
                     Spacer()
-                    Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(AppTheme.textSecondary)
+
+                    HStack(spacing: 6) {
+                        Text("Start")
+                            .font(AppTheme.captionFont.weight(.bold))
+                            .foregroundStyle(AppTheme.accent)
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(AppTheme.accent)
+                    }
                 }
-                .padding(AppTheme.Spacing.md)
+                .padding(.horizontal, AppTheme.Spacing.md)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity)
                 .background(AppTheme.surface)
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.Radii.card)
-                        .stroke(AppTheme.accent.opacity(0.35), lineWidth: 1)
+                        .stroke(AppTheme.accent.opacity(0.35), lineWidth: 1.2)
                 )
             }
+            .buttonStyle(ScaleBounceButtonStyle())
 
-            // Start Outdoor/Treadmill Run
+            // Log Run - Bottom Horizontal Tab Button
             Button {
                 showingRunLogger = true
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: 14) {
                     ZStack {
                         Circle()
                             .fill(AppTheme.proteinColor.opacity(0.18))
-                            .frame(width: 44, height: 44)
+                            .frame(width: 48, height: 48)
                         Image(systemName: "figure.run")
-                            .font(.system(size: 18, weight: .black))
+                            .font(.system(size: 20, weight: .black))
                             .foregroundStyle(AppTheme.proteinColor)
                     }
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 3) {
                         Text("LOG RUN")
-                            .font(AppTheme.eyebrowFont)
-                            .tracking(1.0)
+                            .font(AppTheme.headlineFont.weight(.black))
+                            .tracking(1.2)
                             .foregroundStyle(AppTheme.proteinColor)
-                        Text("Distance / Pace")
-                            .font(AppTheme.headlineFont)
-                            .foregroundStyle(AppTheme.text)
+                        Text("Distance, Pace & Aerobic Intervals")
+                            .font(AppTheme.captionFont)
+                            .foregroundStyle(AppTheme.textSecondary)
+                            .lineLimit(1)
                     }
+
                     Spacer()
-                    Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(AppTheme.textSecondary)
+
+                    HStack(spacing: 6) {
+                        Text("Start")
+                            .font(AppTheme.captionFont.weight(.bold))
+                            .foregroundStyle(AppTheme.proteinColor)
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(AppTheme.proteinColor)
+                    }
                 }
-                .padding(AppTheme.Spacing.md)
+                .padding(.horizontal, AppTheme.Spacing.md)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity)
                 .background(AppTheme.surface)
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.Radii.card)
-                        .stroke(AppTheme.surfaceRaised, lineWidth: 1)
+                        .stroke(AppTheme.surfaceRaised, lineWidth: 1.2)
                 )
             }
+            .buttonStyle(ScaleBounceButtonStyle())
         }
     }
 
