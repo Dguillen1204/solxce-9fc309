@@ -8,6 +8,7 @@ targets:
       - path: Solxce
         excludes:
           - "ios/**"
+      - path: Generated
 
 
     settings:
@@ -30,6 +31,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         SWIFT_EMIT_LOC_STRINGS: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: Solxce/Solxce.entitlements
         ALWAYS_SEARCH_USER_PATHS: NO
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
