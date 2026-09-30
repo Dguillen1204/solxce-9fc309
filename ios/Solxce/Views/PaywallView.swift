@@ -43,18 +43,17 @@ struct PaywallView: View {
                 ScrollView {
                     VStack(spacing: AppTheme.Spacing.lg) {
                         // Brand Hero & Badge
-                        VStack(spacing: AppTheme.Spacing.xs) {
+                        VStack(spacing: AppTheme.Spacing.sm) {
+                            SolxceLogoView(size: 56, showGlow: true)
+
                             HStack(spacing: 6) {
-                                Image(systemName: "bolt.fill")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundStyle(AppTheme.onPrimary)
                                 Text("SOLXCE PRO")
                                     .font(AppTheme.eyebrowFont)
                                     .tracking(2.0)
                                     .foregroundStyle(AppTheme.onPrimary)
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 5)
                             .background(AppTheme.primary)
                             .clipShape(Capsule())
 

@@ -177,6 +177,8 @@ struct TodayView: View {
                     .foregroundStyle(AppTheme.primary)
 
                 HStack(spacing: 8) {
+                    SolxceLogoView(size: 32)
+
                     Text("SOLXCE")
                         .font(AppTheme.displayFont)
                         .foregroundStyle(AppTheme.text)

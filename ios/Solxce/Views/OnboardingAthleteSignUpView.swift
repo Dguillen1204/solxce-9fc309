@@ -438,9 +438,7 @@ struct OnboardingAthleteSignUpView: View {
 
                         Spacer()
 
-                        Image(systemName: "bolt.fill")
-                            .font(.system(size: 20, weight: .black))
-                            .foregroundColor(AppTheme.primary)
+                        SolxceLogoView(size: 32)
                     }
 
                     // Athlete Header Presentation
