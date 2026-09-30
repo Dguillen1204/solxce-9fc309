@@ -13,7 +13,8 @@ public struct AthletePost: Identifiable {
     public let workoutStats: String
     public var caption: String
     public let imageName: String
-    public var mediaType: PostMediaType = .video
+    public var mediaType: PostMediaType = .photo
+    public var mediaItems: [PostMediaItem] = []
     public var mediaIconName: String = "figure.strengthtraining.traditional"
     public var gradientColors: [Color] = [Color(red: 0.15, green: 0.05, blue: 0.05), Color(red: 0.35, green: 0.1, blue: 0.1)]
     public var audioTrack: AudioTrack? = AudioTrack.library.first
@@ -31,7 +32,8 @@ public struct AthletePost: Identifiable {
         workoutStats: String,
         caption: String,
         imageName: String,
-        mediaType: PostMediaType = .video,
+        mediaType: PostMediaType = .photo,
+        mediaItems: [PostMediaItem] = [],
         mediaIconName: String = "figure.strengthtraining.traditional",
         gradientColors: [Color] = [Color(red: 0.15, green: 0.05, blue: 0.05), Color(red: 0.35, green: 0.1, blue: 0.1)],
         audioTrack: AudioTrack? = AudioTrack.library.first,
@@ -49,6 +51,9 @@ public struct AthletePost: Identifiable {
         self.caption = caption
         self.imageName = imageName
         self.mediaType = mediaType
+        self.mediaItems = mediaItems.isEmpty ? [
+            PostMediaItem(id: UUID().uuidString, title: workoutTag, iconName: mediaIconName, gradientHexes: ["#1F1111", "#3D1A1A"], subtitle: workoutStats, isVideo: mediaType == .video)
+        ] : mediaItems
         self.mediaIconName = mediaIconName
         self.gradientColors = gradientColors
         self.audioTrack = audioTrack
@@ -116,10 +121,15 @@ struct FeedView: View {
             timeAgo: "2h ago",
             workoutTag: "CHEST & TRICEPS",
             workoutStats: "6 exercises · 22 sets · 18,400 lbs volume",
-            caption: "New PR on bench today! 315 lbs for a clean double. Feeling dialed in with the split.",
+            caption: "New PR on bench today! 315 lbs for a clean double. Swipe right to check the lockout and velocity bar path charts! 👉",
             imageName: "dumbbell.fill",
-            mediaType: .video,
-            mediaIconName: "figure.strengthtraining.traditional",
+            mediaType: .photo,
+            mediaItems: [
+                PostMediaItem(id: "mv_1", title: "315 lbs Bench Lockout", iconName: "dumbbell.fill", gradientHexes: ["#240D0D", "#4A1818"], subtitle: "Photo 1 of 3 · Set 4 Double", isVideo: false),
+                PostMediaItem(id: "mv_2", title: "Bar Path & Velocity", iconName: "chart.line.uptrend.xyaxis", gradientHexes: ["#141926", "#212B42"], subtitle: "Photo 2 of 3 · 0.44 m/s", isVideo: false),
+                PostMediaItem(id: "mv_3", title: "Post-Bench Hypertrophy", iconName: "figure.arms.open", gradientHexes: ["#291A08", "#4A2F0F"], subtitle: "Photo 3 of 3 · Chest Finisher", isVideo: false)
+            ],
+            mediaIconName: "dumbbell.fill",
             gradientColors: [Color(red: 0.25, green: 0.05, blue: 0.05), Color(red: 0.45, green: 0.1, blue: 0.1)],
             audioTrack: AudioTrack.library[0],
             textOverlay: "315 LBS BENCH DOUBLE 🔥",
@@ -140,6 +150,9 @@ struct FeedView: View {
             caption: "Early 10K around the bay before sunrise. Crisp morning air and steady cadence throughout.",
             imageName: "figure.run",
             mediaType: .video,
+            mediaItems: [
+                PostMediaItem(id: "er_vid", title: "Bay Sunrise 10K 4K Clip", iconName: "figure.run", gradientHexes: ["#081729", "#133152"], subtitle: "4K 60fps Video Clip", isVideo: true)
+            ],
             mediaIconName: "figure.run",
             gradientColors: [Color(red: 0.05, green: 0.15, blue: 0.3), Color(red: 0.1, green: 0.3, blue: 0.5)],
             audioTrack: AudioTrack.library[10], // The Weeknd - Blinding Lights (Apple Music)
@@ -157,9 +170,13 @@ struct FeedView: View {
             timeAgo: "7h ago",
             workoutTag: "HYBRID ENGINE",
             workoutStats: "Heavy Deadlifts 405 + 4-Mile Aerobic Base",
-            caption: "Dual-threat training day. Pulled 405x3 then hit zone-2 cardio. Macros hit at 210g protein.",
+            caption: "Dual-threat training day. Swipe right to see the deadlift unrack and zone-2 pace split. Macros hit at 210g protein.",
             imageName: "bolt.shield.fill",
             mediaType: .photo,
+            mediaItems: [
+                PostMediaItem(id: "kt_1", title: "405 lbs Deadlift Pull", iconName: "bolt.shield.fill", gradientHexes: ["#1B240B", "#2F3D14"], subtitle: "Photo 1 of 2 · 3 Reps", isVideo: false),
+                PostMediaItem(id: "kt_2", title: "4-Mile Aerobic Route", iconName: "figure.run", gradientHexes: ["#0D2429", "#15424D"], subtitle: "Photo 2 of 2 · 142 BPM Zone 2", isVideo: false)
+            ],
             mediaIconName: "bolt.shield.fill",
             gradientColors: [Color(red: 0.15, green: 0.2, blue: 0.05), Color(red: 0.25, green: 0.35, blue: 0.1)],
             audioTrack: AudioTrack.library[6], // DVRST - Close Eyes (Spotify)
@@ -177,9 +194,12 @@ struct FeedView: View {
             timeAgo: "12h ago",
             workoutTag: "RINGS & BARS",
             workoutStats: "Straddle Planche + 5 Strict Muscle-Ups",
-            caption: "Full bodyweight control routine. Clean lockout on every repetition.",
+            caption: "Full bodyweight control routine. Clean lockout on every repetition in 4K.",
             imageName: "figure.gymnastics",
             mediaType: .video,
+            mediaItems: [
+                PostMediaItem(id: "ml_vid", title: "Full Straddle Planche Reel", iconName: "figure.gymnastics", gradientHexes: ["#0B2418", "#14422D"], subtitle: "Full Video Reel", isVideo: true)
+            ],
             mediaIconName: "figure.gymnastics",
             gradientColors: [Color(red: 0.05, green: 0.2, blue: 0.15), Color(red: 0.1, green: 0.35, blue: 0.25)],
             audioTrack: AudioTrack.library[8], // Tevez - Hardstyle Overload (Spotify)
@@ -264,54 +284,50 @@ struct FeedView: View {
     }
 }
 
-// MARK: - Super Simple 9:16 / 16:9 Aspect Post Card
+// MARK: - Super Simple 9:16 Aspect Post Card with Multi-Picture Carousel & Video
 struct SimplePostCardView: View {
     @Binding var post: AthletePost
     var onShare: () -> Void
     var onOpenReel: () -> Void
 
+    @State private var selectedMediaIndex: Int = 0
     @State private var isCommenting: Bool = false
     @State private var commentText: String = ""
     @State private var showHeartBurst: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 9:16 Aspect Media Card Viewport with Top Music Bar and Bottom Caption Overlay
+            // 9:16 Aspect Media Card Viewport with Swipeable Multi-Picture Carousel or Single Video
             ZStack(alignment: .bottom) {
-                // Background Media Gradient Canvas in 9:16 vertical ratio
-                LinearGradient(
-                    colors: post.gradientColors,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .aspectRatio(9.0 / 16.0, contentMode: .fit)
-                .clipped()
-
-                // Center Athlete Visual Icon
-                VStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(post.athleteType.badgeColor.opacity(0.18))
-                            .frame(width: 84, height: 84)
-
-                        Image(systemName: post.mediaIconName)
-                            .font(.system(size: 40, weight: .bold))
-                            .foregroundColor(post.athleteType.badgeColor)
+                // Swipeable Media Content
+                if post.mediaItems.count > 1 {
+                    // Multi-picture horizontal swipeable carousel
+                    TabView(selection: $selectedMediaIndex) {
+                        ForEach(Array(post.mediaItems.enumerated()), id: \.element.id) { index, item in
+                            mediaSlideView(for: item)
+                                .tag(index)
+                        }
                     }
-
-                    if let sticker = post.textOverlay, !sticker.isEmpty {
-                        Text(sticker)
-                            .font(.system(size: 13, weight: .heavy, design: .rounded))
-                            .foregroundColor(AppTheme.primary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.black.opacity(0.75))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                    .clipped()
+                } else if let singleItem = post.mediaItems.first {
+                    // Single media item (Photo or Video)
+                    mediaSlideView(for: singleItem)
+                        .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                        .clipped()
+                } else {
+                    // Fallback gradient canvas
+                    LinearGradient(
+                        colors: post.gradientColors,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                    .clipped()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // Top: Author Info + Music on Top
+                // Top: Author Info + Music on Top + Carousel Index Badge
                 VStack(spacing: 0) {
                     HStack(spacing: 10) {
                         // Author Avatar & Handle
@@ -323,7 +339,7 @@ struct SimplePostCardView: View {
                                     Image(systemName: post.athleteType.iconName)
                                         .font(.system(size: 12, weight: .bold))
                                         .foregroundColor(post.athleteType.badgeColor)
-                                )
+                                raid: )
 
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(post.authorName)
@@ -336,6 +352,36 @@ struct SimplePostCardView: View {
                         }
 
                         Spacer()
+
+                        // Multi-picture page badge (e.g., "1/3")
+                        if post.mediaItems.count > 1 {
+                            HStack(spacing: 4) {
+                                Image(systemName: "square.stack.3d.forward.dottedline.fill")
+                                    .font(.system(size: 10, weight: .bold))
+                                Text("\(selectedMediaIndex + 1)/\(post.mediaItems.count)")
+                                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.65))
+                            .foregroundColor(.white)
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule().stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                            )
+                        } else if post.mediaType == .video {
+                            HStack(spacing: 4) {
+                                Image(systemName: "video.fill")
+                                    .font(.system(size: 9, weight: .bold))
+                                Text("REEL")
+                                    .font(.system(size: 10, weight: .black))
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.65))
+                            .foregroundColor(AppTheme.primary)
+                            .clipShape(Capsule())
+                        }
 
                         // Music on Top Bar / Pill
                         if let audio = post.audioTrack {
@@ -352,7 +398,7 @@ struct SimplePostCardView: View {
                                     .font(.system(size: 11, weight: .semibold))
                                     .foregroundColor(.white)
                                     .lineLimit(1)
-                                    .frame(maxWidth: 130, alignment: .leading)
+                                    .frame(maxWidth: 110, alignment: .leading)
                             }
                             .padding(.horizontal, 9)
                             .padding(.vertical, 5)
@@ -375,10 +421,23 @@ struct SimplePostCardView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 120)
+                .frame(height: 130)
 
-                // Bottom Caption Overlay
-                VStack(alignment: .leading, spacing: 4) {
+                // Bottom Caption Overlay + Page Dots
+                VStack(alignment: .leading, spacing: 6) {
+                    // Multi-picture dots indicator
+                    if post.mediaItems.count > 1 {
+                        HStack(spacing: 5) {
+                            ForEach(0..<post.mediaItems.count, id: \.self) { dotIdx in
+                                Capsule()
+                                    .fill(dotIdx == selectedMediaIndex ? AppTheme.primary : Color.white.opacity(0.4))
+                                    .frame(width: dotIdx == selectedMediaIndex ? 16 : 5, height: 5)
+                                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedMediaIndex)
+                            }
+                        }
+                        .padding(.bottom, 2)
+                    }
+
                     HStack {
                         Text(post.workoutTag)
                             .font(.system(size: 10, weight: .black))
@@ -472,90 +531,143 @@ struct SimplePostCardView: View {
                 Button {
                     onShare()
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "paperplane")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(AppTheme.text)
-                        Text("Share")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(AppTheme.text)
-                    }
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(AppTheme.text)
                 }
                 .buttonStyle(.plain)
 
                 Spacer()
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 4)
             .padding(.top, 12)
-            .padding(.bottom, 6)
 
-            // Simple In-line Comments Tray (when open)
+            // Inline quick comments section
             if isCommenting {
                 VStack(alignment: .leading, spacing: 8) {
-                    if !post.comments.isEmpty {
-                        ForEach(post.comments) { comment in
-                            HStack(alignment: .top, spacing: 6) {
-                                Text(comment.author)
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(AppTheme.primary)
-                                Text(comment.text)
-                                    .font(.system(size: 12))
-                                    .foregroundColor(AppTheme.text)
-                            }
+                    Divider().background(AppTheme.hairline)
+
+                    ForEach(post.comments) { comment in
+                        HStack(alignment: .top, spacing: 8) {
+                            Text(comment.author)
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(AppTheme.text)
+                            Text(comment.text)
+                                .font(.system(size: 12))
+                                .foregroundColor(AppTheme.textSecondary)
+                            Spacer()
+                            Text(comment.timeAgo)
+                                .font(.system(size: 10))
+                                .foregroundColor(AppTheme.textMuted)
                         }
                     }
 
                     HStack(spacing: 8) {
                         TextField("Add a comment...", text: $commentText)
-                            .font(AppTheme.captionFont)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
+                            .font(.system(size: 13))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
                             .background(AppTheme.surface)
-                            .clipShape(Capsule())
-                            .foregroundColor(AppTheme.text)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
 
                         Button {
                             guard !commentText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                            let newC = PostComment(
+                            let newComment = PostComment(
                                 author: "you",
-                                athleteType: .hybrid,
+                                athleteType: post.athleteType,
                                 text: commentText,
                                 timeAgo: "Just now"
                             )
-                            post.comments.append(newC)
+                            post.comments.append(newComment)
                             commentText = ""
                         } label: {
                             Text("Post")
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(AppTheme.primary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(AppTheme.surfaceRaised)
-                                .clipShape(Capsule())
                         }
-                        .disabled(commentText.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                     .padding(.top, 4)
                 }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
+                .padding(.top, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding(8)
-        .background(AppTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 22))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22)
-                .stroke(AppTheme.hairline, lineWidth: 1)
-        )
+    }
+
+    // MARK: - Slide View for Individual Carousel Item or Video
+    private func mediaSlideView(for item: PostMediaItem) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: item.gradientColors.isEmpty ? post.gradientColors : item.gradientColors,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(post.athleteType.badgeColor.opacity(0.18))
+                        .frame(width: 84, height: 84)
+
+                    Image(systemName: item.iconName)
+                        .font(.system(size: 40, weight: .bold))
+                        .foregroundColor(post.athleteType.badgeColor)
+                }
+
+                if let sub = item.subtitle, !sub.isEmpty {
+                    Text(sub)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color.black.opacity(0.55))
+                        .clipShape(Capsule())
+                }
+
+                if let sticker = post.textOverlay, !sticker.isEmpty {
+                    Text(sticker)
+                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .foregroundColor(AppTheme.primary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.black.opacity(0.75))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 }
 
-// MARK: - Share Activity Sheet Bridge
-extension String: @retroactive Identifiable {
-    public var id: String { self }
+// MARK: - Equalizer Sound Animation
+struct EqualizerAnimationView: View {
+    @State private var animating = false
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 2) {
+            bar(height: animating ? 10 : 3, delay: 0.0)
+            bar(height: animating ? 6 : 8, delay: 0.15)
+            bar(height: animating ? 10 : 4, delay: 0.3)
+        }
+        .onAppear {
+            animating = true
+        }
+    }
+
+    private func bar(height: CGFloat, delay: Double) -> some View {
+        RoundedRectangle(cornerRadius: 1)
+            .fill(AppTheme.primary)
+            .frame(width: 2, height: height)
+            .animation(
+                Animation.easeInOut(duration: 0.4)
+                    .repeatForever(autoreverses: true)
+                    .delay(delay),
+                value: animating
+            )
+    }
 }
 
+// MARK: - Native Share Sheet Helper
 struct ShareActivitySheet: UIViewControllerRepresentable {
     let text: String
 
