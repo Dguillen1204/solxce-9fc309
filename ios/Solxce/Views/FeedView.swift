@@ -339,7 +339,7 @@ struct SimplePostCardView: View {
                                     Image(systemName: post.athleteType.iconName)
                                         .font(.system(size: 12, weight: .bold))
                                         .foregroundColor(post.athleteType.badgeColor)
-                                raid: )
+                                )
 
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(post.authorName)
