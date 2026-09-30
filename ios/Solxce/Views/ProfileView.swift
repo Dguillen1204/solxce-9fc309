@@ -20,6 +20,7 @@ struct ProfileView: View {
     @State private var showingEditAthleteType = false
     @State private var showingEditPhotoSheet = false
     @State private var showingWatchHub = false
+    @State private var showingSettings = false
 
     // Profile Post Grid navigation state
     enum ProfileMediaTab: String, CaseIterable {
@@ -149,12 +150,22 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingNewPostSheet = true
-                    } label: {
-                        Image(systemName: "plus.square.fill")
-                            .font(.system(size: 18))
-                            .foregroundStyle(AppTheme.primary)
+                    HStack(spacing: 12) {
+                        Button {
+                            showingNewPostSheet = true
+                        } label: {
+                            Image(systemName: "plus.square.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(AppTheme.primary)
+                        }
+
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 17))
+                                .foregroundStyle(AppTheme.text)
+                        }
                     }
                 }
             }
@@ -180,6 +191,9 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showingWatchHub) {
                 AppleWatchHubView()
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
             }
             .sheet(isPresented: $showingNewPostSheet) {
                 CreateMediaPostSheet(
