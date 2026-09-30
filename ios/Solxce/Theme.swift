@@ -35,10 +35,94 @@ public enum AppAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// Pure Monochrome Design System tokens for Solxce (True Black & Specular White aesthetic)
-/// Pitch-black canvas (#000000), crisp specular white primary/accent (#FFFFFF),
-/// and refined obsidian surfaces (#121212 / #1C1C1C).
+/// Dynamic Vibrant App Accent Palette Engine
+public enum AppAccentColor: String, CaseIterable, Identifiable {
+    case volt = "volt"
+    case cyan = "cyan"
+    case crimson = "crimson"
+    case violet = "violet"
+    case solarOrange = "solar_orange"
+    case emerald = "emerald"
+    case electricPink = "electric_pink"
+    case monochrome = "monochrome"
+
+    public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .volt: return "Apex Volt"
+        case .cyan: return "Cyber Cyan"
+        case .crimson: return "Crimson Pulse"
+        case .violet: return "Ultra Violet"
+        case .solarOrange: return "Solar Orange"
+        case .emerald: return "Apex Emerald"
+        case .electricPink: return "Electric Pink"
+        case .monochrome: return "Pure Monochrome"
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .volt: return "High-octane neon lime & volt energy"
+        case .cyan: return "Hyper-clean electric cyan blue"
+        case .crimson: return "High-intensity athletic laser red"
+        case .violet: return "Futuristic neon purple telemetry"
+        case .solarOrange: return "Blazing kinetic thermal amber"
+        case .emerald: return "Pure bio-luminescent radiant green"
+        case .electricPink: return "High-voltage vivid magenta flare"
+        case .monochrome: return "Minimalist platinum & obsidian white"
+        }
+    }
+
+    public var hexCode: String {
+        switch self {
+        case .volt: return "#CCFF00"
+        case .cyan: return "#06B6D4"
+        case .crimson: return "#F43F5E"
+        case .violet: return "#8B5CF6"
+        case .solarOrange: return "#F97316"
+        case .emerald: return "#10B981"
+        case .electricPink: return "#EC4899"
+        case .monochrome: return "#FFFFFF"
+        }
+    }
+
+    public var color: Color {
+        Color(hex: hexCode)
+    }
+
+    public var gradient: LinearGradient {
+        switch self {
+        case .volt:
+            return LinearGradient(colors: [Color(hex: "#CCFF00"), Color(hex: "#84CC16")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .cyan:
+            return LinearGradient(colors: [Color(hex: "#06B6D4"), Color(hex: "#3B82F6")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .crimson:
+            return LinearGradient(colors: [Color(hex: "#F43F5E"), Color(hex: "#E11D48")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .violet:
+            return LinearGradient(colors: [Color(hex: "#8B5CF6"), Color(hex: "#6366F1")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .solarOrange:
+            return LinearGradient(colors: [Color(hex: "#FB923C"), Color(hex: "#EA580C")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .emerald:
+            return LinearGradient(colors: [Color(hex: "#34D399"), Color(hex: "#059669")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .electricPink:
+            return LinearGradient(colors: [Color(hex: "#F472B6"), Color(hex: "#DB2777")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .monochrome:
+            return LinearGradient(colors: [Color.white, Color(hex: "#CBD5E1")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+    }
+}
+
+/// Centralized Design System tokens for Solxce
 public enum AppTheme {
+    public static let activeAccentKey = "solxce_app_accent_color"
+
+    // MARK: - Active Dynamic Accent Getter
+    public static var activeAccent: AppAccentColor {
+        let raw = UserDefaults.standard.string(forKey: activeAccentKey) ?? AppAccentColor.volt.rawValue
+        return AppAccentColor(rawValue: raw) ?? .volt
+    }
+
     // MARK: - Adaptive Color Helper
     public static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
         Color(UIColor { trait in
@@ -46,48 +130,55 @@ public enum AppTheme {
         })
     }
 
-    // MARK: - Core Colors (Pure Monochrome: Black, Obsidian & Specular White)
-    /// Primary Specular White (#FFFFFF)
+    // MARK: - Core Colors
+    /// Primary High Contrast Foreground
     public static let primary = dynamicColor(
         light: UIColor(red: 0.05, green: 0.05, blue: 0.06, alpha: 1.0),
-        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // #FFFFFF
+        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
     )
 
-    /// Pure Monochrome Primary Accent (#FFFFFF)
-    public static let accent = dynamicColor(
-        light: UIColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 1.0),
-        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // Crisp White
-    )
+    /// Dynamic Vibrant Accent Color
+    public static var accent: Color {
+        activeAccent.color
+    }
 
-    /// Neutral Specular / Platinum / Charcoal tokens
-    public static let specularWhite = Color(red: 1.0, green: 1.0, blue: 1.0) // #FFFFFF
-    public static let platinum = Color(red: 0.886, green: 0.910, blue: 0.941) // #E2E8F0
-    public static let silver = Color(red: 0.65, green: 0.67, blue: 0.72)
-    public static let darkCharcoal = Color(red: 0.18, green: 0.18, blue: 0.20)
+    /// Dynamic Linear Gradient for active accent
+    public static var accentGradient: LinearGradient {
+        activeAccent.gradient
+    }
 
-    // Compatibility aliases mapping cleanly to monochrome
-    public static let crimson = specularWhite
-    public static let volt = specularWhite
-    public static let neonLime = specularWhite
-    public static let cyan = specularWhite
-    public static let primaryVolt = specularWhite
+    /// Constant Vibrant Palettes
+    public static let volt = Color(hex: "#CCFF00")
+    public static let cyan = Color(hex: "#06B6D4")
+    public static let crimson = Color(hex: "#F43F5E")
+    public static let violet = Color(hex: "#8B5CF6")
+    public static let solarOrange = Color(hex: "#F97316")
+    public static let emerald = Color(hex: "#10B981")
+    public static let electricPink = Color(hex: "#EC4899")
+    public static let specularWhite = Color(hex: "#FFFFFF")
+    public static let platinum = Color(hex: "#E2E8F0")
+    public static let silver = Color(hex: "#94A3B8")
+    public static let darkCharcoal = Color(hex: "#1E1E24")
+
+    public static let primaryVolt = Color(hex: "#CCFF00")
+    public static let neonLime = Color(hex: "#CCFF00")
 
     /// Base canvas background: True Black (#000000)
     public static let ground = dynamicColor(
         light: UIColor(red: 0.965, green: 0.965, blue: 0.975, alpha: 1.0),
-        dark: UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0) // #000000
+        dark: UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
     )
 
     /// Card surfaces: Deep Obsidian (#121212)
     public static let surface = dynamicColor(
         light: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0),
-        dark: UIColor(red: 0.071, green: 0.071, blue: 0.071, alpha: 1.0) // #121212
+        dark: UIColor(red: 0.071, green: 0.071, blue: 0.071, alpha: 1.0)
     )
 
     /// Elevated surfaces: Refined Charcoal (#1C1C1C)
     public static let surfaceRaised = dynamicColor(
         light: UIColor(red: 0.93, green: 0.93, blue: 0.95, alpha: 1.0),
-        dark: UIColor(red: 0.110, green: 0.110, blue: 0.110, alpha: 1.0) // #1C1C1C
+        dark: UIColor(red: 0.110, green: 0.110, blue: 0.110, alpha: 1.0)
     )
 
     /// Input fields & subtle chips (#222224)
@@ -96,7 +187,7 @@ public enum AppTheme {
         dark: UIColor(red: 0.133, green: 0.133, blue: 0.141, alpha: 1.0)
     )
 
-    /// Hairline borders (Specular platinum / subtle obsidian shimmer)
+    /// Hairline borders (Subtle obsidian shimmer)
     public static let hairline = dynamicColor(
         light: UIColor(white: 0.0, alpha: 0.08),
         dark: UIColor(white: 1.0, alpha: 0.12)
@@ -105,7 +196,7 @@ public enum AppTheme {
     /// Primary Typography: High Contrast White (#FFFFFF)
     public static let text = dynamicColor(
         light: UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1.0),
-        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // #FFFFFF
+        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
     )
 
     /// Secondary Typography: Platinum Muted (#94A3B8 / #CBD5E1)
@@ -126,23 +217,11 @@ public enum AppTheme {
         dark: UIColor.black
     )
 
-    // MARK: - Telemetry & Macro Semantics (Clean Monochrome Scale)
-    public static let caloriesColor = dynamicColor(
-        light: UIColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0),
-        dark: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0) // Crisp White
-    )
-    public static let proteinColor = dynamicColor(
-        light: UIColor(red: 0.30, green: 0.30, blue: 0.35, alpha: 1.0),
-        dark: UIColor(red: 0.88, green: 0.90, blue: 0.94, alpha: 1.0) // Platinum / Ice White
-    )
-    public static let carbsColor = dynamicColor(
-        light: UIColor(red: 0.45, green: 0.47, blue: 0.52, alpha: 1.0),
-        dark: UIColor(red: 0.68, green: 0.70, blue: 0.75, alpha: 1.0) // Silver Muted
-    )
-    public static let fatColor = dynamicColor(
-        light: UIColor(red: 0.60, green: 0.62, blue: 0.68, alpha: 1.0),
-        dark: UIColor(red: 0.45, green: 0.47, blue: 0.52, alpha: 1.0) // Charcoal Steel
-    )
+    // MARK: - Telemetry & Macro Semantics
+    public static let caloriesColor = Color(hex: "#F97316") // Amber Flame
+    public static let proteinColor = Color(hex: "#06B6D4")  // Cyan
+    public static let carbsColor = Color(hex: "#CCFF00")    // Volt
+    public static let fatColor = Color(hex: "#EC4899")      // Pink
 
     // MARK: - Spacing Grid
     public enum Spacing {
