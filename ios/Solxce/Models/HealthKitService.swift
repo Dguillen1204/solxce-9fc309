@@ -110,9 +110,9 @@ final class HealthKitService: ObservableObject {
         
         return await withCheckedContinuation { continuation in
             let query = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { [weak self] _, statistics, _ in
-                DispatchQueue.main.async {
-                    if let sum = statistics?.sumQuantity() {
-                        let steps = Int(sum.doubleValue(for: HKUnit.count()))
+                let steps = statistics?.sumQuantity().map { Int($0.doubleValue(for: HKUnit.count())) } ?? 0
+                Task { @MainActor [weak self] in
+                    if steps > 0 {
                         self?.todaySteps = steps
                     }
                     continuation.resume()
@@ -130,9 +130,9 @@ final class HealthKitService: ObservableObject {
         
         return await withCheckedContinuation { continuation in
             let query = HKStatisticsQuery(quantityType: calorieType, quantitySamplePredicate: predicate, options: .cumulativeSum) { [weak self] _, statistics, _ in
-                DispatchQueue.main.async {
-                    if let sum = statistics?.sumQuantity() {
-                        let calories = sum.doubleValue(for: HKUnit.kilocalorie())
+                let calories = statistics?.sumQuantity().map { $0.doubleValue(for: HKUnit.kilocalorie()) } ?? 0.0
+                Task { @MainActor [weak self] in
+                    if calories > 0 {
                         self?.todayActiveCalories = calories
                     }
                     continuation.resume()
@@ -150,9 +150,9 @@ final class HealthKitService: ObservableObject {
         
         return await withCheckedContinuation { continuation in
             let query = HKStatisticsQuery(quantityType: distanceType, quantitySamplePredicate: predicate, options: .cumulativeSum) { [weak self] _, statistics, _ in
-                DispatchQueue.main.async {
-                    if let sum = statistics?.sumQuantity() {
-                        let miles = sum.doubleValue(for: HKUnit.mile())
+                let miles = statistics?.sumQuantity().map { $0.doubleValue(for: HKUnit.mile()) } ?? 0.0
+                Task { @MainActor [weak self] in
+                    if miles > 0 {
                         self?.todayDistanceMiles = miles
                     }
                     continuation.resume()
@@ -168,9 +168,10 @@ final class HealthKitService: ObservableObject {
         
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(sampleType: heartRateType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, _ in
-                DispatchQueue.main.async {
-                    if let sample = samples?.first as? HKQuantitySample {
-                        let bpm = sample.quantity.doubleValue(for: HKUnit(from: "count/min"))
+                let sample = samples?.first as? HKQuantitySample
+                let bpm = sample?.quantity.doubleValue(for: HKUnit(from: "count/min")) ?? 0.0
+                Task { @MainActor [weak self] in
+                    if bpm > 0 {
                         self?.currentHeartRateBpm = bpm
                         self?.updateHeartRateZone(bpm: bpm)
                     }
@@ -187,9 +188,10 @@ final class HealthKitService: ObservableObject {
         
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(sampleType: restingType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, _ in
-                DispatchQueue.main.async {
-                    if let sample = samples?.first as? HKQuantitySample {
-                        let bpm = sample.quantity.doubleValue(for: HKUnit(from: "count/min"))
+                let sample = samples?.first as? HKQuantitySample
+                let bpm = sample?.quantity.doubleValue(for: HKUnit(from: "count/min")) ?? 0.0
+                Task { @MainActor [weak self] in
+                    if bpm > 0 {
                         self?.restingHeartRateBpm = bpm
                     }
                     continuation.resume()
@@ -205,11 +207,23 @@ final class HealthKitService: ObservableObject {
         let predicate = HKQuery.predicateForSamples(withStart: Date().addingTimeInterval(-60), end: nil, options: .strictStartDate)
         
         let query = HKAnchoredObjectQuery(type: heartRateType, predicate: predicate, anchor: nil, limit: HKObjectQueryNoLimit) { [weak self] _, samples, _, _, _ in
-            self?.processHeartRateSamples(samples)
+            if let samples = samples as? [HKQuantitySample], let lastSample = samples.last {
+                let bpm = lastSample.quantity.doubleValue(for: HKUnit(from: "count/min"))
+                Task { @MainActor [weak self] in
+                    self?.currentHeartRateBpm = bpm
+                    self?.updateHeartRateZone(bpm: bpm)
+                }
+            }
         }
         
         query.updateHandler = { [weak self] _, samples, _, _, _ in
-            self?.processHeartRateSamples(samples)
+            if let samples = samples as? [HKQuantitySample], let lastSample = samples.last {
+                let bpm = lastSample.quantity.doubleValue(for: HKUnit(from: "count/min"))
+                Task { @MainActor [weak self] in
+                    self?.currentHeartRateBpm = bpm
+                    self?.updateHeartRateZone(bpm: bpm)
+                }
+            }
         }
         
         self.heartRateQuery = query
