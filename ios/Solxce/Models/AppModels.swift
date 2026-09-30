@@ -94,6 +94,8 @@ final class UserProfile {
     var bio: String
     var avatarSymbol: String
     var joinedDate: Date
+    @Attribute(.externalStorage) var profileImageData: Data?
+    var isPublicProfile: Bool
 
     init(
         id: UUID = UUID(),
@@ -102,7 +104,9 @@ final class UserProfile {
         athleteType: AthleteType = .hybrid,
         bio: String = "Dedicated to the daily standard. Heavy lifting & fast miles.",
         avatarSymbol: String = "figure.cross-training",
-        joinedDate: Date = Date()
+        joinedDate: Date = Date(),
+        profileImageData: Data? = nil,
+        isPublicProfile: Bool = true
     ) {
         self.id = id
         self.fullName = fullName
@@ -111,6 +115,8 @@ final class UserProfile {
         self.bio = bio
         self.avatarSymbol = avatarSymbol
         self.joinedDate = joinedDate
+        self.profileImageData = profileImageData
+        self.isPublicProfile = isPublicProfile
     }
 
     var athleteType: AthleteType {
