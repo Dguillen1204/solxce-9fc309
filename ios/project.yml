@@ -25,6 +25,8 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: 'UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight'
         INFOPLIST_KEY_UIRequiresFullScreen: YES
         INFOPLIST_KEY_NSCalendarsUsageDescription: 'This app accesses your calendar to create and read events.'
+        INFOPLIST_KEY_NSHealthShareUsageDescription: 'This app reads health data so it can show your activity and trends.'
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: 'This app writes health data to keep your records up to date.'
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: 'This app uses your location to show nearby content.'
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: 'This app accesses your photo library to read photos.'
         MARKETING_VERSION: "1.0"
