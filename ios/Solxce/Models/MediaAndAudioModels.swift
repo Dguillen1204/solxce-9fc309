@@ -42,34 +42,10 @@ public struct PostMediaItem: Identifiable, Hashable, Codable {
     }
 
     public var gradientColors: [Color] {
-        gradientHexes.compactMap { hex -> Color? in
+        gradientHexes.map { hex in
             Color(hex: hex)
         }
     }
-
-    public static let sampleWorkoutPhotos: [PostMediaItem] = [
-        PostMediaItem(id: "photo_1", title: "Heavy Barbell Lockout", iconName: "dumbbell.fill", gradientHexes: ["#1F1111", "#3D1A1A"], subtitle: "Set 4 · 315 lbs", isVideo: false),
-        PostMediaItem(id: "photo_2", title: "Form & Bar Path", iconName: "chart.line.uptrend.xyaxis", gradientHexes: ["#111926", "#1E2C44"], subtitle: "Velocity: 0.42 m/s", isVideo: false),
-        PostMediaItem(id: "photo_3", title: "Post-Set Pump", iconName: "figure.arms.open", gradientHexes: ["#1A1608", "#382F10"], subtitle: "Chest & Triceps Hypertrophy", isVideo: false)
-    ]
-}
-
-// MARK: - Color Hex Extension
-extension Color {
-    init?(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-
-        var rgb: UInt64 = 0
-        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else { return nil }
-
-        let r = Double((rgb >> 16) & 0xFF) / 255.0
-        let g = Double((rgb >> 8) & 0xFF) / 255.0
-        let b = Double(rgb & 0xFF) / 255.0
-
-        self.init(red: r, green: g, blue: b)
-    }
-}
 
 // MARK: - Streaming Platform Source
 public enum MusicService: String, Codable, CaseIterable, Identifiable {
