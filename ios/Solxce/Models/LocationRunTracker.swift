@@ -186,6 +186,10 @@ final class LocationRunTracker: NSObject, ObservableObject, CLLocationManagerDel
         }
     }
     
+    var caloriesBurned: Int {
+        estimatedCaloriesBurned
+    }
+    
     var estimatedCaloriesBurned: Int {
         Int(totalDistanceMiles * 110)
     }

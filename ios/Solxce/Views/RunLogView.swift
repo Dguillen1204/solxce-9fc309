@@ -187,7 +187,7 @@ struct RunLogView: View {
                 title: runTitle,
                 elapsedSeconds: tracker.elapsedSeconds,
                 heartRate: hr,
-                calories: tracker.caloriesBurned,
+                calories: tracker.estimatedCaloriesBurned,
                 pace: tracker.currentPaceFormatted
             )
         } else if !tracker.isPaused {
@@ -196,7 +196,7 @@ struct RunLogView: View {
                 title: runTitle,
                 elapsedSeconds: tracker.elapsedSeconds,
                 heartRate: 0,
-                calories: tracker.caloriesBurned,
+                calories: tracker.estimatedCaloriesBurned,
                 pace: "--'--\""
             )
         }
@@ -219,7 +219,7 @@ struct RunLogView: View {
             title: runTitle,
             elapsedSeconds: seconds,
             heartRate: hr,
-            calories: tracker.caloriesBurned,
+            calories: tracker.estimatedCaloriesBurned,
             pace: tracker.currentPaceFormatted
         )
     }
