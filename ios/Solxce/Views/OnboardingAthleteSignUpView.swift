@@ -527,6 +527,16 @@ struct OnboardingAthleteSignUpView: View {
 
         try? modelContext.save()
         UserDefaults.standard.set(true, forKey: "solxce_has_completed_athlete_signup")
+
+        // Sync profile to cloud backend via TenxData
+        Task {
+            await BackendSyncService.shared.syncProfileData(
+                name: finalName,
+                handle: finalHandle,
+                athleteType: selectedAthleteType.rawValue
+            )
+        }
+
         isCompleted = true
         dismiss()
     }

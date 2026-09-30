@@ -11,6 +11,7 @@ public final class BackendSyncService: ObservableObject {
 
     @Published public var currentUser: TenxAuthUser?
     @Published public var currentSession: TenxAuthSession?
+    @Published public var accessToken: String?
     @Published public var isAuthenticated: Bool = false
     @Published public var isSyncing: Bool = false
     @Published public var lastSyncTime: Date?
@@ -39,7 +40,7 @@ public final class BackendSyncService: ObservableObject {
             do {
                 let session = try await auth.session(accessToken: token)
                 self.currentSession = session
-                self.currentUser = session.user
+                self.accessToken = token
                 self.isAuthenticated = true
             } catch {
                 // If access token expired, attempt refresh
@@ -74,19 +75,19 @@ public final class BackendSyncService: ObservableObject {
         UserDefaults.standard.removeObject(forKey: refreshKey)
         self.currentUser = nil
         self.currentSession = nil
+        self.accessToken = nil
         self.isAuthenticated = false
     }
 
     private func storeSession(response: TenxAuthResponse) {
         self.currentUser = response.user
         self.currentSession = response.session
+        self.accessToken = response.accessToken
         self.isAuthenticated = true
 
-        if let session = response.session {
-            UserDefaults.standard.set(session.accessToken, forKey: tokenKey)
-            if let refresh = session.refreshToken {
-                UserDefaults.standard.set(refresh, forKey: refreshKey)
-            }
+        UserDefaults.standard.set(response.accessToken, forKey: tokenKey)
+        if let refresh = response.refreshToken {
+            UserDefaults.standard.set(refresh, forKey: refreshKey)
         }
     }
 
@@ -109,7 +110,7 @@ public final class BackendSyncService: ObservableObject {
 
     /// Syncs local profile metadata to Neon database via TenxData
     public func syncProfileData(name: String, handle: String, athleteType: String) async {
-        guard let token = currentSession?.accessToken else { return }
+        guard let token = accessToken else { return }
         self.isSyncing = true
         defer { self.isSyncing = false }
 
@@ -140,7 +141,7 @@ public final class BackendSyncService: ObservableObject {
 
     /// Requests upload authorization for media assets
     public func requestMediaUploadURL(filename: String, contentType: String) async throws -> TenxStorageUploadResponse? {
-        guard let token = currentSession?.accessToken else { return nil }
+        guard let token = accessToken else { return nil }
         return try await storage.createUpload(
             bucket: "media",
             filename: filename,

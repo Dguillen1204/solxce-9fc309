@@ -566,16 +566,28 @@ struct EditAthleteTypeSheet: View {
                         .foregroundColor(AppTheme.textSecondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        profile.athleteType = selectedType
-                        if !fullName.isEmpty { profile.fullName = fullName }
-                        if !handle.isEmpty { profile.handle = handle }
-                        if !bio.isEmpty { profile.bio = bio }
-                        try? modelContext.save()
-                        dismiss()
-                    }
-                    .font(AppTheme.headlineFont)
-                    .foregroundColor(AppTheme.primary)
+                        Button {
+                            // Persist to SwiftData
+                            profile.athleteType = selectedType
+                            if !fullName.isEmpty { profile.fullName = fullName }
+                            if !handle.isEmpty { profile.handle = handle }
+                            if !bio.isEmpty { profile.bio = bio }
+                            try? modelContext.save()
+
+                            // Asynchronously sync profile via TenxData
+                            Task {
+                                await BackendSyncService.shared.syncProfileData(
+                                    name: profile.fullName,
+                                    handle: profile.handle,
+                                    athleteType: profile.athleteType.rawValue
+                                )
+                            }
+                            dismiss()
+                        } label: {
+                            Text("Save")
+                                .font(AppTheme.headlineFont)
+                                .foregroundColor(AppTheme.primary)
+                        }
                 }
             }
             .onAppear {
