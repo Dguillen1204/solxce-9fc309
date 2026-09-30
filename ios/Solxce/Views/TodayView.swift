@@ -5,6 +5,7 @@ import SwiftData
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var macroTargets: [MacroTarget]
+    @Query private var userProfiles: [UserProfile]
     @Query(sort: \FoodEntry.date, order: .reverse) private var allFoods: [FoodEntry]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var workoutSessions: [WorkoutSession]
     @Query(sort: \RunEntry.date, order: .reverse) private var runEntries: [RunEntry]
@@ -139,10 +140,22 @@ struct TodayView: View {
             }
 
             Button(action: { selectedTab = 3 }) {
-                Image(systemName: "person.crop.circle")
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(AppTheme.text)
-                    .frame(width: 44, height: 44)
+                if let profile = userProfiles.first {
+                    AthleteAvatarView(
+                        imageData: profile.profileImageData,
+                        symbolFallback: profile.avatarSymbol.isEmpty ? profile.athleteType.iconName : profile.avatarSymbol,
+                        initials: profile.fullName,
+                        ringColor: profile.athleteType.badgeColor,
+                        size: 38,
+                        showCameraBadge: false,
+                        isPublic: profile.isPublicProfile
+                    )
+                } else {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 26, weight: .semibold))
+                        .foregroundStyle(AppTheme.text)
+                        .frame(width: 44, height: 44)
+                }
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Profile")

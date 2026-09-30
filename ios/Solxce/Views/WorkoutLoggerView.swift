@@ -325,6 +325,15 @@ struct WorkoutLoggerView: View {
         )
         modelContext.insert(session)
         try? modelContext.save()
+
+        // Sync workout event to backend API
+        Task {
+            _ = try? await BackendSyncService.shared.recordWorkoutEvent(
+                title: session.title,
+                durationMinutes: session.durationMinutes,
+                calories: Int(Double(session.durationMinutes) * 7.5)
+            )
+        }
     }
 }
 
