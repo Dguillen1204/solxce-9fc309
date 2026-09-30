@@ -99,11 +99,45 @@ public final class BackendSyncService: ObservableObject {
             struct HealthResponse: Codable {
                 let status: String?
             }
-            let res = try await backend.get(HealthResponse.self, path: "healthz")
+            let res = try await backend.get(HealthResponse.self, path: "healthz", accessToken: accessToken)
             return res.status == "ok" || res.status != nil
         } catch {
             return false
         }
+    }
+
+    /// Calls custom backend workout analytics / AI summary endpoint via authenticated BackendClient
+    public func fetchCloudAnalytics() async throws -> [String: String]? {
+        guard let token = accessToken else { return nil }
+        return try await backend.get([String: String].self, path: "analytics/summary", accessToken: token)
+    }
+
+    /// Sends completed workout payload to backend API endpoint via BackendClient
+    public func recordWorkoutEvent(title: String, durationMinutes: Int, calories: Int) async throws -> Bool {
+        guard let token = accessToken else { return false }
+        struct WorkoutEventPayload: Encodable {
+            let title: String
+            let duration_minutes: Int
+            let calories_burned: Int
+            let completed_at: String
+        }
+        struct WorkoutEventResponse: Decodable {
+            let success: Bool?
+        }
+        let payload = WorkoutEventPayload(
+            title: title,
+            duration_minutes: durationMinutes,
+            calories_burned: calories,
+            completed_at: ISO8601DateFormatter().string(from: Date())
+        )
+        let response = try await backend.send(
+            WorkoutEventResponse.self,
+            path: "workouts/record",
+            method: "POST",
+            body: payload,
+            accessToken: token
+        )
+        return response.success ?? true
     }
 
     // MARK: - TenxData Database Sync

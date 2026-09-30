@@ -497,9 +497,9 @@ struct CreateMediaPostSheet: View {
                 }
                 .padding(AppTheme.Spacing.md)
                 .background(AppTheme.surface)
-                .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.md))
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.md)
+                    RoundedRectangle(cornerRadius: AppTheme.Radii.card)
                         .stroke(AppTheme.hairline, lineWidth: 1)
                 )
             }
