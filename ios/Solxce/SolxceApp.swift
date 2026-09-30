@@ -50,23 +50,29 @@ struct ContentView: View {
                     }
                     .tag(0)
 
-                PlannerView()
+                TrainTabView()
                     .tabItem {
-                        Label("Planner", systemImage: "calendar")
+                        Label("Train", systemImage: "dumbbell.fill")
                     }
                     .tag(1)
 
-                FeedView()
+                FuelTabView()
                     .tabItem {
-                        Label("Feed", systemImage: "square.grid.2x2")
+                        Label("Fuel", systemImage: "leaf.fill")
                     }
                     .tag(2)
 
-                ProfileView()
+                PlannerView()
                     .tabItem {
-                        Label("Profile", systemImage: "person.fill")
+                        Label("Schedule", systemImage: "calendar")
                     }
                     .tag(3)
+
+                ProfileView()
+                    .tabItem {
+                        Label("Athlete", systemImage: "person.fill")
+                    }
+                    .tag(4)
             }
             .tint(AppTheme.primary)
 
