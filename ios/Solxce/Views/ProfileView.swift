@@ -10,6 +10,7 @@ struct ProfileView: View {
     @Query private var macroTargets: [MacroTarget]
     @ObservedObject private var subManager = SubscriptionManager.shared
     @ObservedObject private var watchManager = AppleWatchSyncManager.shared
+    @ObservedObject private var postStore = FeedPostStore.shared
 
     @State private var showingEditGoals = false
     @State private var showingPaywall = false
@@ -18,6 +19,18 @@ struct ProfileView: View {
     @State private var showingEditAthleteType = false
     @State private var showingEditPhotoSheet = false
     @State private var showingWatchHub = false
+
+    // Profile Post Grid navigation state
+    enum ProfileMediaTab: String, CaseIterable {
+        case posts = "Posts"
+        case reels = "Reels"
+        case stats = "Analytics"
+    }
+
+    @State private var selectedMediaTab: ProfileMediaTab = .posts
+    @State private var selectedPostDetailID: UUID? = nil
+    @State private var activeReelPost: AthletePost? = nil
+    @State private var showingNewPostSheet = false
 
     var currentProfile: UserProfile {
         if let existing = userProfiles.first {
@@ -48,12 +61,54 @@ struct ProfileView: View {
         macroTargets.first
     }
 
+    private var myPosts: [AthletePost] {
+        postStore.userPosts(handle: currentProfile.handle)
+    }
+
+    private var myReels: [AthletePost] {
+        postStore.userReels(handle: currentProfile.handle)
+    }
+
+    private var postGridItems: [FeedGridItem] {
+        myPosts.map { post in
+            let badge: FeedGridBadge = post.mediaType == .video ? .reel : (post.mediaItems.count > 1 ? .carousel : .none)
+            return FeedGridItem(
+                postID: post.id,
+                seed: post.workoutTag,
+                badge: badge,
+                viewCount: post.mediaType == .video ? (post.likesCount * 14 + 120) : nil,
+                accessibilityLabel: post.caption,
+                iconName: post.mediaIconName,
+                gradientColors: post.gradientColors,
+                textOverlay: post.textOverlay
+            )
+        }
+    }
+
+    private var reelGridItems: [FeedGridItem] {
+        myReels.map { post in
+            FeedGridItem(
+                postID: post.id,
+                seed: post.workoutTag,
+                badge: .reel,
+                viewCount: post.likesCount * 14 + 120,
+                accessibilityLabel: post.caption,
+                iconName: post.mediaIconName,
+                gradientColors: post.gradientColors,
+                textOverlay: post.textOverlay
+            )
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: AppTheme.Spacing.lg) {
+                VStack(spacing: AppTheme.Spacing.md) {
                     // Profile Header & Avatar
                     profileHeader
+
+                    // Instagram-style Stat Counters (Posts, Followers, Volume)
+                    profileSocialCountersRow
 
                     // Athlete Archetype Pass Card
                     athleteArchetypeCard
@@ -61,20 +116,25 @@ struct ProfileView: View {
                     // Apple Watch Companion Pass Card
                     appleWatchProfileCard
 
-                    // Solxce Pro Membership Card
-                    proMembershipCard
+                    // Instagram-Style Profile Content Tab Bar
+                    profileMediaSection
 
-                    // In-Depth Analytics Shortcut
-                    inDepthReportShortcut
+                    if selectedMediaTab == .stats {
+                        // Solxce Pro Membership Card
+                        proMembershipCard
 
-                    // Aggregate Lifetime Stats
-                    lifetimeStatsCard
+                        // In-Depth Analytics Shortcut
+                        inDepthReportShortcut
 
-                    // Nutrition Goals Config Card
-                    nutritionGoalsCard
+                        // Aggregate Lifetime Stats
+                        lifetimeStatsCard
 
-                    // Training Distribution
-                    trainingHistoryCard
+                        // Nutrition Goals Config Card
+                        nutritionGoalsCard
+
+                        // Training Distribution
+                        trainingHistoryCard
+                    }
                 }
                 .padding(.horizontal, AppTheme.Spacing.screenMargin)
                 .padding(.top, AppTheme.Spacing.sm)
@@ -83,6 +143,17 @@ struct ProfileView: View {
             .background(AppTheme.ground.ignoresSafeArea())
             .navigationTitle("Athlete Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingNewPostSheet = true
+                    } label: {
+                        Image(systemName: "plus.square.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(AppTheme.primary)
+                    }
+                }
+            }
             .sheet(isPresented: $showingEditGoals) {
                 if let currentTarget = target {
                     EditMacroGoalsSheet(target: currentTarget)
@@ -105,6 +176,42 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showingWatchHub) {
                 AppleWatchHubView()
+            }
+            .sheet(isPresented: $showingNewPostSheet) {
+                CreateMediaPostSheet(
+                    authorName: currentProfile.fullName,
+                    authorHandle: currentProfile.handle,
+                    athleteType: currentProfile.athleteType,
+                    authorProfileImageData: currentProfile.profileImageData,
+                    isPublicAuthor: currentProfile.isPublicProfile,
+                    onPost: { newPost in
+                        postStore.addPost(newPost)
+                    }
+                )
+            }
+            .sheet(isPresented: Binding(
+                get: { selectedPostDetailID != nil },
+                set: { if !$0 { selectedPostDetailID = nil } }
+            )) {
+                if let postID = selectedPostDetailID {
+                    PostDetailModalSheet(
+                        postID: postID,
+                        onOpenReel: { reelPost in
+                            selectedPostDetailID = nil
+                            activeReelPost = reelPost
+                        }
+                    )
+                }
+            }
+            .fullScreenCover(item: $activeReelPost) { reelPost in
+                if let index = postStore.posts.firstIndex(where: { $0.id == reelPost.id }) {
+                    TikTokReelPlayerModal(
+                        post: $postStore.posts[index],
+                        onAddComment: { newComment in
+                            postStore.posts[index].comments.append(newComment)
+                        }
+                    )
+                }
             }
         }
     }
@@ -213,6 +320,187 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppTheme.Spacing.xs)
+    }
+
+    // MARK: - Instagram-style Social Counters Row
+    private var profileSocialCountersRow: some View {
+        HStack(spacing: 0) {
+            Button {
+                selectedMediaTab = .posts
+            } label: {
+                VStack(spacing: 2) {
+                    Text("\(myPosts.count)")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppTheme.text)
+                    Text("Posts")
+                        .font(AppTheme.captionFont)
+                        .foregroundStyle(AppTheme.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+
+            Divider()
+                .frame(height: 24)
+                .background(AppTheme.hairline)
+
+            VStack(spacing: 2) {
+                Text("1.2K")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppTheme.text)
+                Text("Followers")
+                    .font(AppTheme.captionFont)
+                    .foregroundStyle(AppTheme.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+
+            Divider()
+                .frame(height: 24)
+                .background(AppTheme.hairline)
+
+            VStack(spacing: 2) {
+                Text("\(myPosts.reduce(0) { $0 + $1.likesCount })")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppTheme.primary)
+                Text("Likes")
+                    .font(AppTheme.captionFont)
+                    .foregroundStyle(AppTheme.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, 10)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+    }
+
+    // MARK: - Profile Media Tab Section (Grid, Reels, Stats)
+    private var profileMediaSection: some View {
+        VStack(spacing: 12) {
+            // Segmented Header
+            HStack(spacing: 0) {
+                ForEach(ProfileMediaTab.allCases, id: \.self) { tab in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedMediaTab = tab
+                        }
+                    } label: {
+                        VStack(spacing: 8) {
+                            HStack(spacing: 6) {
+                                switch tab {
+                                case .posts:
+                                    Image(systemName: "squareshape.split.3x3")
+                                        .font(.system(size: 14, weight: selectedMediaTab == tab ? .bold : .regular))
+                                case .reels:
+                                    Image(systemName: "play.rectangle.on.rectangle")
+                                        .font(.system(size: 14, weight: selectedMediaTab == tab ? .bold : .regular))
+                                case .stats:
+                                    Image(systemName: "chart.bar.fill")
+                                        .font(.system(size: 14, weight: selectedMediaTab == tab ? .bold : .regular))
+                                }
+
+                                Text(tab.rawValue)
+                                    .font(.system(size: 13, weight: selectedMediaTab == tab ? .bold : .medium))
+                            }
+                            .foregroundStyle(selectedMediaTab == tab ? AppTheme.primary : AppTheme.textSecondary)
+
+                            // Underline indicator
+                            Rectangle()
+                                .fill(selectedMediaTab == tab ? AppTheme.primary : Color.clear)
+                                .frame(height: 2)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.top, 4)
+
+            // Tab Content
+            switch selectedMediaTab {
+            case .posts:
+                if postGridItems.isEmpty {
+                    emptyMediaPlaceholder(
+                        icon: "camera.fill",
+                        title: "No Posts Yet",
+                        subtitle: "Share your workout achievements, PRs, and training recaps to your profile."
+                    )
+                } else {
+                    FeedProfileGrid(
+                        items: postGridItems,
+                        onSelect: { item in
+                            if let postID = item.postID {
+                                selectedPostDetailID = postID
+                            }
+                        },
+                        config: FeedProfileGridConfig(tileAspect: 1, spacing: 2, columns: 3)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                }
+
+            case .reels:
+                if reelGridItems.isEmpty {
+                    emptyMediaPlaceholder(
+                        icon: "video.badge.plus",
+                        title: "No Reels Yet",
+                        subtitle: "Record workout form checks and high-intensity clips to build your reel showcase."
+                    )
+                } else {
+                    FeedProfileGrid(
+                        items: reelGridItems,
+                        onSelect: { item in
+                            if let postID = item.postID,
+                               let post = myPosts.first(where: { $0.id == postID }) {
+                                activeReelPost = post
+                            }
+                        },
+                        config: FeedProfileGridConfig(tileAspect: 0.75, spacing: 2, columns: 3)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
+                }
+
+            case .stats:
+                EmptyView()
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func emptyMediaPlaceholder(icon: String, title: String, subtitle: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 36))
+                .foregroundStyle(AppTheme.primary.opacity(0.8))
+
+            Text(title)
+                .font(AppTheme.headlineFont)
+                .foregroundStyle(AppTheme.text)
+
+            Text(subtitle)
+                .font(AppTheme.captionFont)
+                .foregroundStyle(AppTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            Button {
+                showingNewPostSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .bold))
+                    Text("Create First Post")
+                        .font(AppTheme.captionFont.weight(.bold))
+                }
+                .foregroundStyle(Color.black)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(AppTheme.primary)
+                .clipShape(Capsule())
+            }
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radii.card))
     }
 
     // MARK: - Apple Watch Profile Card

@@ -34,13 +34,19 @@ enum FeedGridBadge {
 /// One tile in the grid.
 @available(iOS 17.0, *)
 struct FeedGridItem: Identifiable {
-    var id = UUID()
+    var id: UUID = UUID()
+    /// Post ID for navigation / selection mapping
+    var postID: UUID? = nil
     /// Seed for the neutral gradient scene standing in for media.
     var seed: String
     var badge: FeedGridBadge = .none
     /// Shown bottom-leading with an eye glyph (reels tab treatment).
     var viewCount: Int? = nil
     var accessibilityLabel: String? = nil
+    /// Dynamic styling colors / icon if available
+    var iconName: String? = nil
+    var gradientColors: [Color]? = nil
+    var textOverlay: String? = nil
 }
 
 /// Layout knobs for `FeedProfileGrid`.
@@ -91,31 +97,60 @@ struct FeedProfileGrid: View {
     }
 
     private func tile(_ item: FeedGridItem) -> some View {
-        FeedMediaScene(seed: item.seed)
-            .aspectRatio(config.tileAspect, contentMode: .fit)
-            .overlay(alignment: .topTrailing) {
-                if let glyph = item.badge.systemName {
-                    Image(systemName: glyph)
-                        .font(.system(size: 12, weight: .semibold))
+        ZStack {
+            if let colors = item.gradientColors, colors.count >= 2 {
+                LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+            } else {
+                FeedMediaScene(seed: item.seed)
+            }
+
+            if let icon = item.iconName {
+                Image(systemName: icon)
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .shadow(color: .black.opacity(0.4), radius: 3)
+            }
+
+            if let text = item.textOverlay, !text.isEmpty {
+                VStack {
+                    Spacer()
+                    Text(text)
+                        .font(.system(size: 9, weight: .black))
                         .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-                        .padding(6)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Color.black.opacity(0.65))
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                        .lineLimit(1)
+                        .padding(.bottom, item.viewCount != nil ? 22 : 6)
+                        .padding(.horizontal, 4)
                 }
             }
-            .overlay(alignment: .bottomLeading) {
-                if let views = item.viewCount {
-                    HStack(spacing: 3) {
-                        Image(systemName: "eye")
-                            .font(.system(size: 10, weight: .semibold))
-                        Text(FeedCount.abbreviated(views))
-                            .font(FeedTokens.metaFont.weight(.semibold))
-                    }
+        }
+        .aspectRatio(config.tileAspect, contentMode: .fit)
+        .overlay(alignment: .topTrailing) {
+            if let glyph = item.badge.systemName {
+                Image(systemName: glyph)
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
                     .padding(6)
-                }
             }
-            .contentShape(.rect)
+        }
+        .overlay(alignment: .bottomLeading) {
+            if let views = item.viewCount {
+                HStack(spacing: 3) {
+                    Image(systemName: "eye.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(FeedCount.abbreviated(views))
+                        .font(FeedTokens.metaFont.weight(.semibold))
+                }
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                .padding(6)
+            }
+        }
+        .contentShape(.rect)
     }
 }
 

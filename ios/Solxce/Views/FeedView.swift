@@ -119,104 +119,7 @@ struct FeedView: View {
         currentUserProfile?.handle ?? "solxce_athlete"
     }
 
-    @State private var posts: [AthletePost] = [
-        AthletePost(
-            authorName: "Marcus Vance",
-            authorHandle: "marcus_lifts",
-            athleteType: .powerlifter,
-            timeAgo: "2h ago",
-            workoutTag: "CHEST & TRICEPS",
-            workoutStats: "6 exercises · 22 sets · 18,400 lbs volume",
-            caption: "New PR on bench today! 315 lbs for a clean double. Swipe right to check the lockout and velocity bar path charts! 👉",
-            imageName: "dumbbell.fill",
-            mediaType: .photo,
-            mediaItems: [
-                PostMediaItem(id: "mv_1", title: "315 lbs Bench Lockout", iconName: "dumbbell.fill", gradientHexes: ["#240D0D", "#4A1818"], subtitle: "Photo 1 of 3 · Set 4 Double", isVideo: false),
-                PostMediaItem(id: "mv_2", title: "Bar Path & Velocity", iconName: "chart.line.uptrend.xyaxis", gradientHexes: ["#141926", "#212B42"], subtitle: "Photo 2 of 3 · 0.44 m/s", isVideo: false),
-                PostMediaItem(id: "mv_3", title: "Post-Bench Hypertrophy", iconName: "figure.arms.open", gradientHexes: ["#291A08", "#4A2F0F"], subtitle: "Photo 3 of 3 · Chest Finisher", isVideo: false)
-            ],
-            mediaIconName: "dumbbell.fill",
-            gradientColors: [Color(red: 0.25, green: 0.05, blue: 0.05), Color(red: 0.45, green: 0.1, blue: 0.1)],
-            audioTrack: AudioTrack.library[0],
-            textOverlay: "315 LBS BENCH DOUBLE 🔥",
-            likesCount: 142,
-            isLiked: false,
-            comments: [
-                PostComment(author: "elena_runs", athleteType: .runner, text: "Insane bench numbers man! Clean form 🔥", timeAgo: "1h ago"),
-                PostComment(author: "coach_dave", athleteType: .functional, text: "Chest drive looking sharp. Keep recovering well.", timeAgo: "45m ago")
-            ]
-        ),
-        AthletePost(
-            authorName: "Elena Rostova",
-            authorHandle: "elena_runs",
-            athleteType: .runner,
-            timeAgo: "4h ago",
-            workoutTag: "TEMPO RUN",
-            workoutStats: "6.20 mi · 44:18 · 7'08\" /mi pace",
-            caption: "Early 10K around the bay before sunrise. Crisp morning air and steady cadence throughout.",
-            imageName: "figure.run",
-            mediaType: .video,
-            mediaItems: [
-                PostMediaItem(id: "er_vid", title: "Bay Sunrise 10K 4K Clip", iconName: "figure.run", gradientHexes: ["#081729", "#133152"], subtitle: "4K 60fps Video Clip", isVideo: true)
-            ],
-            mediaIconName: "figure.run",
-            gradientColors: [Color(red: 0.05, green: 0.15, blue: 0.3), Color(red: 0.1, green: 0.3, blue: 0.5)],
-            audioTrack: AudioTrack.library[10], // The Weeknd - Blinding Lights (Apple Music)
-            textOverlay: "SUB-45 10K SUNSET ⚡",
-            likesCount: 89,
-            isLiked: true,
-            comments: [
-                PostComment(author: "marcus_lifts", athleteType: .powerlifter, text: "That 7:08 pace is flying!", timeAgo: "3h ago")
-            ]
-        ),
-        AthletePost(
-            authorName: "Kai Takahashi",
-            authorHandle: "kai_athletic",
-            athleteType: .hybrid,
-            timeAgo: "7h ago",
-            workoutTag: "HYBRID ENGINE",
-            workoutStats: "Heavy Deadlifts 405 + 4-Mile Aerobic Base",
-            caption: "Dual-threat training day. Swipe right to see the deadlift unrack and zone-2 pace split. Macros hit at 210g protein.",
-            imageName: "bolt.shield.fill",
-            mediaType: .photo,
-            mediaItems: [
-                PostMediaItem(id: "kt_1", title: "405 lbs Deadlift Pull", iconName: "bolt.shield.fill", gradientHexes: ["#1B240B", "#2F3D14"], subtitle: "Photo 1 of 2 · 3 Reps", isVideo: false),
-                PostMediaItem(id: "kt_2", title: "4-Mile Aerobic Route", iconName: "figure.run", gradientHexes: ["#0D2429", "#15424D"], subtitle: "Photo 2 of 2 · 142 BPM Zone 2", isVideo: false)
-            ],
-            mediaIconName: "bolt.shield.fill",
-            gradientColors: [Color(red: 0.15, green: 0.2, blue: 0.05), Color(red: 0.25, green: 0.35, blue: 0.1)],
-            audioTrack: AudioTrack.library[6], // DVRST - Close Eyes (Spotify)
-            textOverlay: "HYBRID OVERLOAD",
-            likesCount: 215,
-            isLiked: false,
-            comments: [
-                PostComment(author: "sarah_lifts", athleteType: .bodybuilder, text: "The definition of hybrid athletic output!", timeAgo: "5h ago")
-            ]
-        ),
-        AthletePost(
-            authorName: "Maya Lin",
-            authorHandle: "maya_rings",
-            athleteType: .calisthenics,
-            timeAgo: "12h ago",
-            workoutTag: "RINGS & BARS",
-            workoutStats: "Straddle Planche + 5 Strict Muscle-Ups",
-            caption: "Full bodyweight control routine. Clean lockout on every repetition in 4K.",
-            imageName: "figure.gymnastics",
-            mediaType: .video,
-            mediaItems: [
-                PostMediaItem(id: "ml_vid", title: "Full Straddle Planche Reel", iconName: "figure.gymnastics", gradientHexes: ["#0B2418", "#14422D"], subtitle: "Full Video Reel", isVideo: true)
-            ],
-            mediaIconName: "figure.gymnastics",
-            gradientColors: [Color(red: 0.05, green: 0.2, blue: 0.15), Color(red: 0.1, green: 0.35, blue: 0.25)],
-            audioTrack: AudioTrack.library[8], // Tevez - Hardstyle Overload (Spotify)
-            textOverlay: "STRICT RINGS",
-            likesCount: 167,
-            isLiked: true,
-            comments: [
-                PostComment(author: "kai_athletic", athleteType: .hybrid, text: "That planche hold was flawless.", timeAgo: "9h ago")
-            ]
-        )
-    ]
+    @ObservedObject private var postStore = FeedPostStore.shared
 
     // Active full screen reel modal
     @State private var activeReelPost: AthletePost? = nil
@@ -227,7 +130,7 @@ struct FeedView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 24) {
-                    ForEach($posts) { $post in
+                    ForEach($postStore.posts) { $post in
                         SimplePostCardView(
                             post: $post,
                             onShare: {
@@ -268,9 +171,7 @@ struct FeedView: View {
                     authorProfileImageData: currentUserProfile?.profileImageData,
                     isPublicAuthor: currentUserProfile?.isPublicProfile ?? true,
                     onPost: { newPost in
-                        withAnimation(.spring()) {
-                            posts.insert(newPost, at: 0)
-                        }
+                        postStore.addPost(newPost)
                     }
                 )
             }
@@ -278,11 +179,11 @@ struct FeedView: View {
                 ShareActivitySheet(text: item.text)
             }
             .fullScreenCover(item: $activeReelPost) { reelPost in
-                if let index = posts.firstIndex(where: { $0.id == reelPost.id }) {
+                if let index = postStore.posts.firstIndex(where: { $0.id == reelPost.id }) {
                     TikTokReelPlayerModal(
-                        post: $posts[index],
+                        post: $postStore.posts[index],
                         onAddComment: { newComment in
-                            posts[index].comments.append(newComment)
+                            postStore.posts[index].comments.append(newComment)
                         }
                     )
                 }
